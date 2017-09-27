@@ -24,7 +24,9 @@ int setup_publisher(char *publisher_path)
 	}
 
 	memset(&server_addr, 0, sizeof(server_addr));
+
 	strncpy(server_addr.sun_path, publisher_path, sizeof(server_addr.sun_path - 1));
+	printf("input: %s, copy %s", publisher_path, server_addr.sun_path);
 	unlink(publisher_path);
 
 	server_addr.sun_family = AF_LOCAL;
@@ -35,7 +37,7 @@ int setup_publisher(char *publisher_path)
 		perror("Error binding");
 		return NITS_SOCKET_ERROR;
 	}
-	
+
 	printf ("Setting up unix domain publisher on %s\n", publisher_path);
 	return (NITS_SOCKET_OK);
 }
