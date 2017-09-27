@@ -4,12 +4,53 @@
 #include "unixnitslib.h"
 
 // Global Variables
-static int server_fd;
+static int listen_fd;
 
 int setup_subscriber(char *publisher_path)
 {
+	int listen_fd;
+	int result;
+	int i;
+	struct sockaddr client_addr;
+
+	// Obtain a file descriptor for the server.
+	listen_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+
+	if (listen_fd == -1)
+	{
+		perror("Error creating socket");
+		return NITS_SOCKET_ERROR;
+	}
+
+	// Clear out server_addr so it can be used.
+	memset(&client_addr, 0, sizeof(server_addr));
+
+	// Copy the publisher path to the server_addr path and set
+	// the socket family to local.
+	strncpy(client_addr.sun_path, publisher_path, sizeof(client_addr.sun_path) - 1);
+	server_addr.sun_family = AF_LOCAL;
+
+	// Loop 6 times until a connection can be established. There
+	// will be a 0.5 second delay after a failure is determined.
+	for (i = 1; i <= 6; i++)
+	{
+		result = connect(listen_fd, struct sockaddr*) &client_addr
+		if (result == -1)
+		{
+				perror("Error connecting");
+				delay(500);
+		}
+		else
+			break;
+	}
+
+	// If the counter is set to 6 return an error.
+	if (i == 6)
+		return NITS_SOCKET_ERROR;
+
+	// Return the file descriptor.
 	printf ("Setting up unix domain subscriber on %s\n", publisher_path);
-	return (0);
+	return listen_fd;
 }
 
 int setup_publisher(char *publisher_path)
@@ -18,9 +59,9 @@ int setup_publisher(char *publisher_path)
 	struct sockaddr_un server_addr;
 
 	// Obtain a file descriptor for the server.
-	server_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+	listen_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 
-	if (server_fd == -1)
+	if (listen_fd == -1)
 	{
 		perror("Error creating socket");
 		return NITS_SOCKET_ERROR;
@@ -29,17 +70,17 @@ int setup_publisher(char *publisher_path)
 	// Clear out server_addr so it can be used.
 	memset(&server_addr, 0, sizeof(server_addr));
 
-	// Copy the publisher path to the server_addr path.
-	strncpy(server_addr.sun_path, publisher_path, sizeof(server_addr.sun_path) - 1);
-
 	// Unlink any instances.
 	unlink(publisher_path);
 
+	// Copy the publisher path to the server_addr path and set
+	// the socket family to local.
+	strncpy(server_addr.sun_path, publisher_path, sizeof(server_addr.sun_path) - 1);
 	server_addr.sun_family = AF_LOCAL;
 
 	// Bind to the socket
-	result = bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
-	
+	result = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+
 	if (result == -1)
 	{
 		perror("Error binding");
