@@ -12,6 +12,7 @@ int setup_subscriber(char *publisher_path)
 int setup_publisher(char *publisher_path)
 {
 	int server;
+	int result;
 	struct sockaddr_un server_addr;
 
 	server = socket(AF_LOCAL, SOCKS_STREAM, 0);
@@ -24,6 +25,14 @@ int setup_publisher(char *publisher_path)
 	memset(&server_addr, 0 sizeof(sockaddr_un));
 	strcpy(server_addr.sun_path, publisher_path);
 	server_addr.sun_family = AF_LOCAL;
+
+	result = bind(socket, (struct sockaddr_un*)&addr, sizeof(server_addr))
+	if (result == -1)
+	{
+		perror("Error binding");
+		return NITS_SOCKET_ERROR;
+	}
+
 
 	printf ("Setting up unix domain publisher on %s\n", publisher_path);
 	return (NITS_SOCKET_OK);
