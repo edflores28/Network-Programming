@@ -36,13 +36,13 @@ int setup_subscriber(char *publisher_path)
 	for (i = 1; i <= 6; i++)
 	{
 		result = connect(listen_fd, (struct sockaddr*) &client_addr, sizeof(client_addr));
-		if (result == -1)
-		{
-				perror("Error connecting");
-//				sleep(0.5);
-		}
-		else
+		if (result == 0)
 			break;
+		else
+		{
+			perror("Error connecting");
+			sleep(0.5);
+		}
 	}
 
 	// If the counter is set to 6 return an error.
