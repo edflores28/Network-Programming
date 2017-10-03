@@ -33,7 +33,7 @@ int setup_subscriber(char *publisher_path)
 
 	// Loop 6 times until a connection can be established. There
 	// will be a 0.5 second delay after a failure is determined.
-	for (i = 1; i <= 6; i++)
+	for (i = 0; i < 6; i++)
 	{
 		result = connect(listen_fd, (struct sockaddr*) &client_addr, sizeof(client_addr));
 		if (result == 0)
@@ -41,7 +41,7 @@ int setup_subscriber(char *publisher_path)
 		else
 		{
 			perror("Error connecting");
-			sleep(0.5);
+			sleep(1);
 		}
 	}
 
