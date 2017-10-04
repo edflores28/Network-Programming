@@ -32,7 +32,7 @@ int setup_subscriber(char *publisher_path)
 	client_addr.sun_family = AF_LOCAL;
 
 	// Loop 6 times until a connection can be established. There
-	// will be a 0.5 second delay after a failure is determined.
+	// will be a 1 second delay after a failure is determined.
 	for (i = 0; i < 6; i++)
 	{
 		result = connect(sub_fd, (struct sockaddr*) &client_addr, sizeof(client_addr));
@@ -97,7 +97,7 @@ int setup_publisher(char *publisher_path)
 		return NITS_SOCKET_ERROR;
 	}
 
-	printf ("Setting up unix domain publisher eererer on %s\n", publisher_path);
+	printf ("Setting up unix domain publisher on %s\n", publisher_path);
 	return (NITS_SOCKET_OK);
 }
 
@@ -106,16 +106,18 @@ int get_next_subscriber(void)
 	struct sockaddr_un cli_addr;
 	int sock_fd, addr_len;
 
+	// Return the error if the socket has not been created
 	if (!(listen_fd > 0))
 	{
 		printf("The publisher has not been set up!\n");
 		return NITS_SOCKET_ERROR;
 	}
 
+	// Accept the subscriber on obtain a socket.
 	addr_len = sizeof(cli_addr);
-
 	sock_fd = accept(listen_fd, (struct sockaddr *)&cli_addr, &addr_len);
-	
+
+	// Return the error if the socket has not been created
 	if (sock_fd == -1)
 	{
 		perror("Error accepting");
