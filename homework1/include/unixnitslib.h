@@ -7,3 +7,5 @@
 int setup_subscriber(char *server_path);
 
 int setup_publisher(char *server_path);
+
+int get_next_subscriber(void);
