@@ -9,15 +9,15 @@ static int listen_fd;
 
 int setup_subscriber(char *publisher_path)
 {
-	int listen_fd;
+	int sub_fd;
 	int result;
 	int i;
 	struct sockaddr_un client_addr;
 
 	// Obtain a file descriptor for the server.
-	listen_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+	sub_fd = socket(AF_LOCAL, SOCK_STREAM, 0);
 
-	if (listen_fd == -1)
+	if (sub_fd == -1)
 	{
 		perror("Error creating socket");
 		return NITS_SOCKET_ERROR;
@@ -35,7 +35,7 @@ int setup_subscriber(char *publisher_path)
 	// will be a 0.5 second delay after a failure is determined.
 	for (i = 0; i < 6; i++)
 	{
-		result = connect(listen_fd, (struct sockaddr*) &client_addr, sizeof(client_addr));
+		result = connect(sub_fd, (struct sockaddr*) &client_addr, sizeof(client_addr));
 		if (result == 0)
 			break;
 		else
@@ -51,7 +51,7 @@ int setup_subscriber(char *publisher_path)
 
 	// Return the file descriptor.
 	printf ("Setting up unix domain subscriber on %s\n", publisher_path);
-	return listen_fd;
+	return sub_fd;
 }
 
 int setup_publisher(char *publisher_path)
@@ -99,4 +99,28 @@ int setup_publisher(char *publisher_path)
 
 	printf ("Setting up unix domain publisher eererer on %s\n", publisher_path);
 	return (NITS_SOCKET_OK);
+}
+
+int get_next_subscriber(void)
+{
+	struct sockaddr_un cli_addr;
+	int sock_fd, addr_len;
+
+	if (!(listen_fd > 0))
+	{
+		printf("The publisher has not been set up!\n");
+		return NITS_SOCKET_ERROR;
+	}
+
+	addr_len = sizeof(cli_addr);
+
+	sock_fd = accept(listen_fd, (struct sockaddr *)&cli_addr, &addr_len);
+	
+	if (sock_fd == -1)
+	{
+		perror("Error accepting");
+		return NITS_SOCKET_ERROR;
+	}
+
+	return sock_fd;
 }
