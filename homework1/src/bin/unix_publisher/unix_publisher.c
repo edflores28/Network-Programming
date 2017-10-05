@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	char article[ARRAY_SIZE];
 	FILE *file;
 	int found = -1;
-	
+
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
 
@@ -51,32 +51,53 @@ int main(int argc, char *argv[])
 			{
 				printf("QUIT received, exiting..");
 				break;
-				exit(0);
+//				exit(0);
 			}
 
-
+			// Clear the article buffer and determine
+			// if the article is found in "my" path, this
+			// checks to see if the file exists and is readable.
 			memset(&article[0], 0, sizeof(article));
-			strcpy(article, netArticle);
+			strcpy(article, myArticle);
 			strcat(article, buffer);
 
-			if (access(article,F_OK|R_OK) == 0)
-				printf("ARTICLE EXISTS AND READABLE\n");
+			found = access(article,F_OK|R_OK);
 
-			// Obtain a handle to the file.
-			// TODO need to search directories for the articles.
-			file = fopen(article,"r");
-
-			if (file == NULL)
+			// Check to see if the article was found. If not
+			// Clear the article buffer and determine
+			// if the article is found in "net_class" path, this
+			// checks to see if the file exists and is readable.
+			if (found != 0)
 			{
-				perror("Error Opening File");
-				exit(1);
+				memset(&article[0], 0, sizeof(article));
+				strcpy(article, netArticle);
+				strcat(article, buffer);
 			}
 
-			while(fgets(buffer, sizeof(buffer),file))
-				write(fd,buffer,ARRAY_SIZE-1);
-			
-			printf("Finished sending to the subscriber\n");
-			close(fd);
+			// If the article is found send it to the subscriber.
+			if (found == 0)
+			{
+				// Obtain a handle to the file.
+				// TODO need to search directories for the articles.
+				file = fopen(article,"r");
+
+				if (file == NULL)
+				{
+					perror("Error Opening File");
+					exit(1);
+				}
+
+				while(fgets(buffer, sizeof(buffer),file))
+					write(fd,buffer,ARRAY_SIZE-1);
+
+				printf("Finished sending to the subscriber\n");
+				close(fd);
+			}
+
+			// Close the file descriptor if the article is
+			// not found in both paths.
+			if (found != 0)
+				close(fd);
 	}
 
 	close(fd);
