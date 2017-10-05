@@ -29,12 +29,13 @@ main(int argc, char *argv[])
 	}
 
 	// Send the Article that the subscriber wants from the publisher
-	n = write(fd, "/home/net_class/474/Articles/termcap", 37);
+	n = write(fd, "termcap", 8);
+	//n = write(fd, "QUIT", 4);
 
 	// Obtain a handle to write what we receive from the publisher.
 	// Exit is there is an error.
 	FILE *file;
-	file = fopen("./termcap", "w");
+	file = fopen("termcap", "w");
 
 	if (file == NULL)
 	{
