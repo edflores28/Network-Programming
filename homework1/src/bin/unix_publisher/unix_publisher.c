@@ -39,11 +39,12 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 
+			memset(&buffer[0],0,sizeof(buffer));
 			// Read which article the subscriber requested.
 			bytes = read(fd, buffer, ARRAY_SIZE-1);
 
 			if (bytes < 0)
-				printf("Error Reading");
+				printf("Error Reading\n");
 
 			printf("Recieved %s from the subscriber\n", buffer);
 
@@ -51,9 +52,8 @@ int main(int argc, char *argv[])
 			// If so break from the while loop
 			if ((bytes == 4) && (buffer[0] == 'Q') && (buffer[1] == 'U') && (buffer[2] == 'I') && (buffer[3] == 'T'))
 			{
-				printf("QUIT received, exiting..");
+				printf("QUIT received, exiting..\n");
 				break;
-//				exit(0);
 			}
 
 			// Clear the article buffer and determine
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 			{
 				// Obtain a handle to the file.
 				// TODO need to search directories for the articles.
-				file = fopen(article,"r");
+				file = fopen(article,"rb");
 
 				if (file == NULL)
 				{

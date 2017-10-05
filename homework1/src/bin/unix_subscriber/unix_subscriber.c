@@ -3,16 +3,19 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include "unixnitslib.h"
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	int fd
+	int fd;
 	int bytes;
 	int found;
+	char buffer[256];
+	int init_read = -1;
+	int length;
 
 	// Check to see if there are valid arguments.
 	if (argc < 2)
@@ -32,37 +35,47 @@ main(int argc, char *argv[])
 	}
 
 	printf("Sending %s to the publisher\n", argv[1]);
-
-	found = access(article,F_OK);
-
-	printf("found %i:", found);
-	exit(1);
-
+	
 	// Send the Article that the subscriber wants from the publisher
-	bytes = write(fd, "termcap", 8);
-	//n = write(fd, "QUIT", 4);
+	// First make sure we get the size of the file.
+	for (length = 0; length < 25; length++)
+		if (argv[1][length] == 0x00)
+			break;
+
+	bytes = write(fd,argv[1],length);
 
 	// Obtain a handle to write what we receive from the publisher.
 	// Exit is there is an error.
 	FILE *file;
-	file = fopen("termcap", "w");
+	file = fopen(argv[1], "wb");
 
 	if (file == NULL)
 	{
-		perror("ERROR");
+		perror("Unable to open and write the file");
+		close(fd);
 		exit(1);
 	}
-
-	int buffer[256];
 
 	// Read from the socket until there is is no more
 	// data available from the subscriber. Also
 	// write to the file.
-	while(n != 0)
+	while(bytes != 0)
 	{
-		n = read(fd,buffer,255);
+		bytes = read(fd,buffer,255);
+		
+		// If nothing comes from the buffer in the initial read
+		// break from the loop, otherwhise do not break.
+		if (init_read == -1)
+			if (bytes == 0)
+				break;
+			else
+				init_read = 0;
+
 		fputs(buffer, file);
 	}
+
+	if (init_read == -1)
+		printf("There was nothing recieved from the publisher\n");
 
 	close(fd);
 	fclose(file);
