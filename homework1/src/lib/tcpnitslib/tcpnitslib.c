@@ -1,8 +1,12 @@
 /*
  * Pretty header file stuff is here.
  */
-#include <arpa/inet.>
+//#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include "tcpnitslib.h"
 
 // Global Variables
@@ -30,7 +34,7 @@ int setup_subscriber(struct in_addr *host, int port)
 	// Set the TCP configuration
 	client_addr.sin_family = AF_INET;
 	client_addr.sin_port = htons(port);
-	client_addr.sin_addr.sddr = host;
+	client_addr.sin_addr.s_addr = (uint32_t)host;
 
 	// Loop 6 times until a connection can be established. There
 	// will be a 1 second delay after a failure is determined.
@@ -75,11 +79,11 @@ int setup_publisher(int port)
 	memset(&server_addr, 0, sizeof(server_addr));
 
 	// Unlink any instances.
-	unlink(publisher_path);
+	//unlink(publisher_path);
 
 	// Set the family and the port number.
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(port)
+	server_addr.sin_port = htons(port);
 
 	// Bind to the socket
 	result = bind(listen_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
