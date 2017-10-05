@@ -7,3 +7,4 @@
 
 int setup_subscriber (struct in_addr *host, int port);
 int setup_publisher (int port);
+int get_next_subscriber(void);
