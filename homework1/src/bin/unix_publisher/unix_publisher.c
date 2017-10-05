@@ -3,6 +3,8 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include "unixnitslib.h"
 
 #define ARRAY_SIZE 256
@@ -12,20 +14,12 @@ int main(int argc, char *argv[])
 	int fd;
 	int bytes;
 	char buffer[ARRAY_SIZE];
-
-	/*
-	 * check args.
-	 */
-	if (argc < 2)
-	{
-		fprintf (stderr, "Usage: %s <source file>\n", argv[0]);
-		exit (1);
-	}
-	/*
-	 * do your stuff here...just calling setup_publisher
-	 * in this example for fun.
-	 */
-
+	char article[ARRAY_SIZE];
+	FILE *file;
+	int found = -1;
+	
+	char myArticle[] = "/home/eflores4/Articles/";
+	char netArticle[] = "/home/net_class/474/Articles/";
 
 	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
 	{
@@ -45,21 +39,32 @@ int main(int argc, char *argv[])
 			}
 
 			// Read which article the subscriber requested.
-			int bytes = read(fd, buffer, ARRAY_SIZE-1);
+			bytes = read(fd, buffer, ARRAY_SIZE-1);
 
 			if (bytes < 0)
-				perror("Error Reading");
+				printf("Error Reading");
 
+			printf("Recieved %s from the subscriber\n", buffer);
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if (stncmp(buffer,"QUIT",4) == 0)
+			if ((bytes == 4) && (buffer[0] == 'Q') && (buffer[1] == 'U') && (buffer[2] == 'I') && (buffer[3] == 'T'))
+			{
+				printf("QUIT received, exiting..");
 				break;
+				exit(0);
+			}
 
+
+			memset(&article[0], 0, sizeof(article));
+			strcpy(article, netArticle);
+			strcat(article, buffer);
+
+			if (access(article,F_OK|R_OK) == 0)
+				printf("ARTICLE EXISTS AND READABLE\n");
 
 			// Obtain a handle to the file.
 			// TODO need to search directories for the articles.
-			FILE *file;
-			file = fopen(buffer,"r");
+			file = fopen(article,"r");
 
 			if (file == NULL)
 			{
@@ -68,7 +73,10 @@ int main(int argc, char *argv[])
 			}
 
 			while(fgets(buffer, sizeof(buffer),file))
-				write(fd,buffer,255);
+				write(fd,buffer,ARRAY_SIZE-1);
+			
+			printf("Finished sending to the subscriber\n");
+			close(fd);
 	}
 
 	close(fd);
