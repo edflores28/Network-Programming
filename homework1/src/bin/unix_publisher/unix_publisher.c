@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/fcntl.h>
 #include <unistd.h>
 #include "unixnitslib.h"
 
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
 
 	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
 	{
-		fprintf (stderr, "Stupid idiot, you screwed up.\n");
+		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
 	}
 
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
 				printf("Error Reading");
 
 			printf("Recieved %s from the subscriber\n", buffer);
+
 			// Check to see if QUIT was received,
 			// If so break from the while loop
 			if ((bytes == 4) && (buffer[0] == 'Q') && (buffer[1] == 'U') && (buffer[2] == 'I') && (buffer[3] == 'T'))
@@ -59,19 +61,19 @@ int main(int argc, char *argv[])
 			// checks to see if the file exists and is readable.
 			memset(&article[0], 0, sizeof(article));
 			strcpy(article, myArticle);
-			strcat(article, buffer);
+			strncat(article, buffer, bytes);
 
 			found = access(article,F_OK|R_OK);
 
 			// Check to see if the article was found. If not
-			// Clear the article buffer and determine
-			// if the article is found in "net_class" path, this
-			// checks to see if the file exists and is readable.
-			if (found != 0)
+			// clear the article buffer and determine
+			// if the article is found in "net_class" path.
+			if (found == -1)
 			{
 				memset(&article[0], 0, sizeof(article));
 				strcpy(article, netArticle);
-				strcat(article, buffer);
+				strncat(article, buffer, bytes);
+				found = access(article,F_OK|R_OK);
 			}
 
 			// If the article is found send it to the subscriber.
@@ -97,7 +99,10 @@ int main(int argc, char *argv[])
 			// Close the file descriptor if the article is
 			// not found in both paths.
 			if (found != 0)
+			{
+				printf("File path: %s not found..\n",buffer);
 				close(fd);
+			}
 	}
 
 	close(fd);
