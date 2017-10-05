@@ -3,15 +3,18 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
 #include "unixnitslib.h"
 
 int
 main(int argc, char *argv[])
 {
-	int fd, n;
-	/*
-	 * check args.
-	 */
+	int fd
+	int bytes;
+	int found;
+
+	// Check to see if there are valid arguments.
 	if (argc < 2)
 	{
 		fprintf (stderr, "Usage: %s <dest file>\n", argv[0]);
@@ -24,12 +27,19 @@ main(int argc, char *argv[])
 
 	if (fd == NITS_SOCKET_ERROR)
 	{
-		fprintf (stderr, "Stupid idiot, you screwed up. You know nothing.\n");
+		fprintf (stderr, "There was an error creating the subscriber.\n");
 		exit(1);
 	}
 
+	printf("Sending %s to the publisher\n", argv[1]);
+
+	found = access(article,F_OK);
+
+	printf("found %i:", found);
+	exit(1);
+
 	// Send the Article that the subscriber wants from the publisher
-	n = write(fd, "termcap", 8);
+	bytes = write(fd, "termcap", 8);
 	//n = write(fd, "QUIT", 4);
 
 	// Obtain a handle to write what we receive from the publisher.
@@ -45,7 +55,7 @@ main(int argc, char *argv[])
 
 	int buffer[256];
 
-	// Read from the socket until there is is no more 
+	// Read from the socket until there is is no more
 	// data available from the subscriber. Also
 	// write to the file.
 	while(n != 0)
