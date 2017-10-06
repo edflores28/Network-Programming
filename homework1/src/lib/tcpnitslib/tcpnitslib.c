@@ -85,8 +85,6 @@ int setup_subscriber(struct in_addr *host, int port)
 */
 int setup_publisher(int port)
 {
-	printf ("Setting up tcp publisher on %d\n", port);
-
 	int result;
 	struct sockaddr_in server_addr;
 
