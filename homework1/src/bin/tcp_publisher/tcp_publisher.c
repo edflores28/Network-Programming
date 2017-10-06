@@ -18,7 +18,9 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 
-#define MY_PORT	7640
+#define MY_PORT	8404
+
+#define ARRAY_SIZE 256
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +37,7 @@ int main(int argc, char *argv[])
 	char netArticle[] = "/home/net_class/474/Articles/";
 
 	// Obtain the socket, exit if there is an error.
-	if ((pub_fd = setup_publisher (MY_PORT)) == NITS_SOCKET_ERROR)
+	if ((fd = setup_publisher (MY_PORT)) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
