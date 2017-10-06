@@ -1,5 +1,15 @@
 /*
- *	<Header stuff goes here>
+ *Project: Assignment 1
+ *
+ *Progam: unix_publisher
+ *File Name: unix_publisher.c
+ *Purpose: Serves articles requested by the publisher over
+ *         a UNIX socket. The articles are looked in two
+ *				 different directory paths.
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +22,7 @@
 
 int main(int argc, char *argv[])
 {
+	// Variables
 	int fd;
 	int bytes;
 	char buffer[ARRAY_SIZE];
@@ -19,6 +30,7 @@ int main(int argc, char *argv[])
 	FILE *file;
 	int found = -1;
 
+	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
 
@@ -28,9 +40,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+// Run the loop until terminated
 	while(1)
 	{
-			// Obtain the file descriptor. Exit is there is an error.
+			// Obtain the file descriptor for the subscriber.
+			// Exit is there is an error.
 			fd = get_next_subscriber();
 
 			if (fd == NITS_SOCKET_ERROR)
@@ -39,8 +53,8 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 
+			// Clear the buffer and read which article the subscriber requested
 			memset(&buffer[0],0,sizeof(buffer));
-			// Read which article the subscriber requested.
 			bytes = read(fd, buffer, ARRAY_SIZE-1);
 
 			if (bytes < 0)
@@ -80,7 +94,6 @@ int main(int argc, char *argv[])
 			if (found == 0)
 			{
 				// Obtain a handle to the file.
-				// TODO need to search directories for the articles.
 				file = fopen(article,"rb");
 
 				if (file == NULL)
@@ -89,6 +102,7 @@ int main(int argc, char *argv[])
 					exit(1);
 				}
 
+				// Transferring the requested article.
 				while(fgets(buffer, sizeof(buffer),file))
 					write(fd,buffer,ARRAY_SIZE-1);
 
@@ -105,6 +119,7 @@ int main(int argc, char *argv[])
 			}
 	}
 
+	// Do some cleanup.
 	close(fd);
 	fclose(file);
 	exit (0);

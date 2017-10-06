@@ -1,5 +1,14 @@
 /*
- *	<Header stuff goes here>
+ *Project: Assignment 1
+ *
+ *Progam: tcp_subscriber
+ *File Name: tcp_subscriber.c
+ *Purpose: Requests articles from the publisher over
+ *         a UNIX socket.
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,12 +17,15 @@
 #include <unistd.h>
 #include "unixnitslib.h"
 
+#define ARRAY_SIZE 256
+
 int main(int argc, char *argv[])
 {
+	// Variables
 	int fd;
 	int bytes;
 	int found;
-	char buffer[256];
+	char buffer[ARRAY_SIZE];
 	int init_read = -1;
 	int length;
 
@@ -35,7 +47,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Sending %s to the publisher\n", argv[1]);
-	
+
 	// Send the Article that the subscriber wants from the publisher
 	// First make sure we get the size of the file.
 	for (length = 0; length < 25; length++)
@@ -62,7 +74,7 @@ int main(int argc, char *argv[])
 	while(bytes != 0)
 	{
 		bytes = read(fd,buffer,255);
-		
+
 		// If nothing comes from the buffer in the initial read
 		// break from the loop, otherwhise do not break.
 		if (init_read == -1)
@@ -74,9 +86,11 @@ int main(int argc, char *argv[])
 		fputs(buffer, file);
 	}
 
+	// Print out a message if there were no bytes reads.
 	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
 
+	// Do some cleanup.
 	close(fd);
 	fclose(file);
 	exit (0);

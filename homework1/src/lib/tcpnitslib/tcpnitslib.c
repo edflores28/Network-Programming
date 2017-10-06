@@ -1,7 +1,23 @@
 /*
- * Pretty header file stuff is here.
- */
-//#include <arpa/inet.h>
+*Project: Assignment 1
+*
+*Library: tcpnitslib
+*File Name: tcpnitslib.cpp
+*Purpose: provides utilities to set up TCP client
+*         and server sockets
+*
+*Synopsis (Usage and Parameters):
+*
+*	  setup_subscriber(struct in_addr *host, int port)
+*
+* 	setup_publisher(int port)
+*
+* 	get_next_subscriber(void)
+*
+*Programmer: Edwin Flores
+*Course: EN.605.474.81
+*
+*/
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +28,10 @@
 // Global Variables
 static int listen_fd;
 
+/*
+* Function that sets up the subscriber and returns
+* a socket.
+*/
 int setup_subscriber(struct in_addr *host, int port)
 {
 	int sub_fd;
@@ -59,6 +79,10 @@ int setup_subscriber(struct in_addr *host, int port)
 	return sub_fd;
 }
 
+/*
+* Function that sets up the subscriber and returns
+* a socket
+*/
 int setup_publisher(int port)
 {
 	printf ("Setting up tcp publisher on %d\n", port);
@@ -107,6 +131,10 @@ int setup_publisher(int port)
 	return (NITS_SOCKET_OK);
 }
 
+/*
+* Function that obtains the next subscriber and
+* returns it's socket
+*/
 int get_next_subscriber(void)
 {
 	struct sockaddr_in cli_addr;

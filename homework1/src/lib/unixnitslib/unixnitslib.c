@@ -1,3 +1,23 @@
+/*
+*Project: Assignment 1
+*
+*Library: unixnitslib
+*File Name: unixnitslib.cpp
+*Purpose: provides utilities to set up UNIX client
+*         and server sockets
+*
+*Synopsis (Usage and Parameters):
+*
+*	  setup_subscriber(char *publisher_path)
+*
+* 	setup_publisher(char *publisher_path)
+*
+* 	get_next_subscriber(void)
+*
+*Programmer: Edwin Flores
+*Course: EN.605.474.81
+*
+*/
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +27,10 @@
 // Global Variables
 static int listen_fd;
 
+/*
+* Function that sets up the subscriber and returns
+* a socket.
+*/
 int setup_subscriber(char *publisher_path)
 {
 	int sub_fd;
@@ -54,6 +78,10 @@ int setup_subscriber(char *publisher_path)
 	return sub_fd;
 }
 
+/*
+* Function that sets up the subscriber and returns
+* a socket
+*/
 int setup_publisher(char *publisher_path)
 {
 	int result;
@@ -101,6 +129,10 @@ int setup_publisher(char *publisher_path)
 	return (NITS_SOCKET_OK);
 }
 
+/*
+* Function that obtains the next subscriber and
+* returns it's socket
+*/
 int get_next_subscriber(void)
 {
 	struct sockaddr_un cli_addr;

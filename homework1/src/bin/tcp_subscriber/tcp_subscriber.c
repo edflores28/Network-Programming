@@ -1,5 +1,14 @@
 /*
- *	<Header stuff goes here>
+ *Project: Assignment 1
+ *
+ *Progam: tcp_subscriber
+ *File Name: tcp_subscriber.c
+ *Purpose: Requests articles from the publisher over
+ *         a TCP socket.
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,32 +19,36 @@
 
 #define MY_PORT	8404
 
+#define ARRAY_SIZE 256
+
 int main(int argc, char *argv[])
 {
+	// Variables
 	int fd;
 	int bytes;
 	int found;
-	char buffer[256];
+	char buffer[ARRAY_SIZE];
 	int init_read = -1;
 	int length;
 	struct in_addr *host;
 
-	host = (uint32_t) inet_addr("127.0.0.1");
-
-	printf("host: %2u\n", host);
-
-	/*
-	 * make sure to fill in the host information correctly.
-	 */
+	// Check to see if there are valid arguments.
 	if (argc < 2)
 	{
 		fprintf (stderr, "Usage: %s <article> [opt IP addr]\n", argv[0]);
 		exit (1);
 	}
-	
+
+	// Set the host to be localhost
+	host = (uint32_t) inet_addr("127.0.0.1");
+
+	// If the user entered an ip address use it as
+	// the host.
 	if (argc > 2)
 		host = (uint32_t) inet_addr(argv[2]);
 
+	// Obtain the socket file descriptor for the subscriber.
+	// Exit is there is an error
 	fd = setup_subscriber (host, MY_PORT);
 
 	if (fd == NITS_SOCKET_ERROR)
@@ -71,7 +84,7 @@ int main(int argc, char *argv[])
 	// write to the file.
 	while(bytes != 0)
 	{
-		bytes = read(fd,buffer,255);
+		bytes = read(fd,buffer,ARRAY_SIZE-1);
 
 		// If nothing comes from the buffer in the initial read
 		// break from the loop, otherwhise do not break.
@@ -81,12 +94,15 @@ int main(int argc, char *argv[])
 			else
 				init_read = 0;
 
+		// Write to the file.
 		fputs(buffer, file);
 	}
 
+	// Print out a message if there were no bytes reads.
 	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
 
+	// Do some cleanup.
 	close(fd);
 	fclose(file);
 	exit (0);
