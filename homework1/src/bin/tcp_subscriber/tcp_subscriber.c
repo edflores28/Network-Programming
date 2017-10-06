@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 
-#define MY_PORT	7640
+#define MY_PORT	8404
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +19,11 @@ int main(int argc, char *argv[])
 	int init_read = -1;
 	int length;
 	struct in_addr *host;
+
+	host = (uint32_t) inet_addr("127.0.0.1");
+
+	printf("host: %2u\n", host);
+
 	/*
 	 * make sure to fill in the host information correctly.
 	 */
@@ -27,10 +32,10 @@ int main(int argc, char *argv[])
 		fprintf (stderr, "Usage: %s <article> [opt IP addr]\n", argv[0]);
 		exit (1);
 	}
-	/*
-	 * do your stuff here...just calling setup_subscriber
-	 * in this example for fun.
-	 */
+	
+	if (argc > 2)
+		host = (uint32_t) inet_addr(argv[2]);
+
 	fd = setup_subscriber (host, MY_PORT);
 
 	if (fd == NITS_SOCKET_ERROR)
