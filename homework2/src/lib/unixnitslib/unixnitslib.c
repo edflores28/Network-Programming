@@ -164,8 +164,8 @@ int get_next_subscriber(void)
 
 int setup_discovery_server(char *server_socket)
 {
-	struct sockaddr_un disc_addr
-	int fd;
+	struct sockaddr_un disc_addr;
+	int fd, result;
 
 	// Obtain a file descriptor for the server.
 	fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
@@ -184,7 +184,7 @@ int setup_discovery_server(char *server_socket)
 
 	// Copy the publisher path to the server_addr path and set
 	// the socket family to local.
-	strncpy(disc_addr.sun_path, publisher_path, sizeof(disc_addr.sun_path) - 1);
+	strncpy(disc_addr.sun_path, server_socket, sizeof(disc_addr.sun_path) - 1);
 	disc_addr.sun_family = AF_LOCAL;
 
 	// Bind to the socket
@@ -205,5 +205,6 @@ int setup_discovery_server(char *server_socket)
 		return NITS_SOCKET_ERROR;
 	}
 
-	printf ("Setting up unix domain discovery service on %s\n", publisher_path);
+	printf ("Setting up unix domain discovery service on %s\n", server_socket);
 	return fd;
+}

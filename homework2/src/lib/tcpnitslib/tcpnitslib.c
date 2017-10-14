@@ -163,7 +163,7 @@ int get_next_subscriber(void)
 
 int setup_discovery_server(int port)
 {
-	int result;
+	int fd, result;
 	struct sockaddr_in disc_addr;
 
 	// Obtain a file descriptor for the server.
