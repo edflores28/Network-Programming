@@ -1,5 +1,5 @@
 /*
-*Project: Assignment 1
+*Project: Assignment 2
 *
 *Library: unixnitslib
 *File Name: unixnitslib.h
@@ -14,6 +14,8 @@
 *
 * 	get_next_subscriber(void)
 *
+*   setup_discovery_server(char *server_socket)
+*
 *Programmer: Edwin Flores
 *Course: EN.605.474.81
 *
@@ -23,8 +25,12 @@
 
 #define PATH "/home/eflores4/serversocket"
 
+#define DISCOVERY_PATH	"/tmp/port.7400_d"
+
 int setup_subscriber(char *server_path);
 
 int setup_publisher(char *server_path);
 
 int get_next_subscriber(void);
+
+int setup_discovery_server(char *server_socket);

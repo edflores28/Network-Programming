@@ -14,6 +14,8 @@
 *
 * 	get_next_subscriber(void)
 *
+*   setup_discovery_server(char *server_socket);
+*
 *Programmer: Edwin Flores
 *Course: EN.605.474.81
 *
@@ -159,3 +161,49 @@ int get_next_subscriber(void)
 
 	return sock_fd;
 }
+
+int setup_discovery_server(char *server_socket)
+{
+	struct sockaddr_un disc_addr
+	int fd;
+
+	// Obtain a file descriptor for the server.
+	fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
+
+	if (fd == -1)
+	{
+		perror("Error creating socket");
+		return NITS_SOCKET_ERROR;
+	}
+
+	// Clear out server_addr so it can be used.
+	memset(&disc_addr, 0, sizeof(disc_addr));
+
+	// Unlink any instances.
+	unlink(server_socket);
+
+	// Copy the publisher path to the server_addr path and set
+	// the socket family to local.
+	strncpy(disc_addr.sun_path, publisher_path, sizeof(disc_addr.sun_path) - 1);
+	disc_addr.sun_family = AF_LOCAL;
+
+	// Bind to the socket
+	result = bind(fd, (struct sockaddr*)&disc_addr, sizeof(disc_addr));
+
+	if (result == -1)
+	{
+		perror("Error binding");
+		return NITS_SOCKET_ERROR;
+	}
+
+	// Listen on the socket
+	result = listen(fd, 5);
+
+	if (result == -1)
+	{
+		perror("Error listening");
+		return NITS_SOCKET_ERROR;
+	}
+
+	printf ("Setting up unix domain discovery service on %s\n", publisher_path);
+	return fd;
