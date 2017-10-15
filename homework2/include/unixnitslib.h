@@ -25,7 +25,7 @@
 
 #define PATH "/home/eflores4/serversocket"
 
-#define DISCOVERY_PATH	"/tmp/port.7400_d"
+#define DISCOVERY_PATH	"/home/eflores4/disc"
 
 int setup_subscriber(char *server_path);
 
