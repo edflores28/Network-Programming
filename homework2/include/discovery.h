@@ -1,4 +1,5 @@
 #include <netinet/in.h>
+#include <sys/un.h>
 
 /*
  * Discovery service handles this many publishers
