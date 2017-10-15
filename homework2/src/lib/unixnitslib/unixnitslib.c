@@ -196,15 +196,6 @@ int setup_discovery_server(char *server_socket)
 		return NITS_SOCKET_ERROR;
 	}
 
-	// Listen on the socket
-	result = listen(fd, 5);
-
-	if (result == -1)
-	{
-		perror("Error listening");
-		return NITS_SOCKET_ERROR;
-	}
-
 	printf ("Setting up unix domain discovery service on %s\n", server_socket);
 	return fd;
 }
