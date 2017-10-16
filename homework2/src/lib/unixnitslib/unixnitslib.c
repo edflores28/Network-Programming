@@ -170,7 +170,7 @@ int setup_discovery_server(char *server_socket)
 	// Obtain a file descriptor for the server.
 	fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
 
-	if (fd == -1)
+	if (fd < 0)
 	{
 		perror("Error creating socket");
 		return NITS_SOCKET_ERROR;
@@ -190,7 +190,7 @@ int setup_discovery_server(char *server_socket)
 	// Bind to the socket
 	result = bind(fd, (struct sockaddr*)&disc_addr, sizeof(disc_addr));
 
-	if (result == -1)
+	if (result < 0)
 	{
 		perror("Error binding");
 		return NITS_SOCKET_ERROR;
