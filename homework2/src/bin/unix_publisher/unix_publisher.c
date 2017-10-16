@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 #include "unixnitslib.h"
 
@@ -29,10 +31,21 @@ int main(int argc, char *argv[])
 	char article[ARRAY_SIZE];
 	FILE *file;
 	int found = -1;
+	struct sockaddr_un server;
 
 	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
+
+	int udp_fd = setup_discovery_server("/home/eflores4/discli");
+
+	server.sun_family = AF_LOCAL;
+	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+
+	int nbytes = sendto(udp_fd, "HELLO", 5, 0, (struct sockaddr *)&server, sizeof(server));
+
+	printf("BYTES: %i\n",nbytes);
+	exit(1);
 
 	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
 	{
