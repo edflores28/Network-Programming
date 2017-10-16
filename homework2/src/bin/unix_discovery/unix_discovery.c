@@ -1,36 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include "discovery.h"
 #include "unixnitslib.h"
 #include <errno.h>
 
-#define DEFAULT_DISCOVERY_ADDR 128.220.101.247
 #define BUFFER_SIZE 256
 
 int main(int argc, char *argv[])
 {
   int fd, recvlen;
   char buffer[BUFFER_SIZE];
-  int error;
+  struct sockaddr_un client;
+  socklen_t size;
   
   fd = setup_discovery_server(DISCOVERY_PATH);
 
-  error = errno;
-  int i;
+  printf("HELLO %i\n", fd);
+ 
   if (fd == NITS_SOCKET_ERROR)
   {
-    printf("Error creating discovery service..exiting..%i",error);
+    perror("Error creating discovery service..exiting..");
     exit(1);
   }
 
-  while(1)
-  {
-      printf("Waiting to receive a message");
-      recvlen = recvfrom(fd, buffer, BUFFER_SIZE, 0, NULL, NULL);
+  while(1){
+  int nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&client, &size);
 
-      for (i = 0; i < recvlen; i++){
-        printf("%i",buffer[i]);
-      }
-  }
+  printf("bytes: %i\n",nbytes);
+ }
 }
