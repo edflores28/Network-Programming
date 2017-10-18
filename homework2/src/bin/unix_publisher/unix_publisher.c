@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include "discovery.h"
 #include "unixnitslib.h"
 
 #define ARRAY_SIZE 256
@@ -32,6 +33,9 @@ int main(int argc, char *argv[])
 	FILE *file;
 	int found = -1;
 	struct sockaddr_un server;
+        disc_advertise mesg;
+	
+	mesg.msg_type = ADVERTISE;
 
 	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
@@ -41,9 +45,10 @@ int main(int argc, char *argv[])
 
 	server.sun_family = AF_LOCAL;
 	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
-
-	int nbytes = sendto(udp_fd, "HELLO", 5, 0, (struct sockaddr *)&server, sizeof(server));
-
+	int nbytes;
+//	while(1){
+	nbytes = sendto(udp_fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
+//	}
 	printf("BYTES: %i\n",nbytes);
 	exit(1);
 
