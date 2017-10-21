@@ -14,33 +14,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/fcntl.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include "unixnitslib.h"
 
-#define ARRAY_SIZE 1024
+#define BUFFER_SIZE 1024
 
-void set_socket_timeout(int fd) {
-	struct timeval time;
-	int res;
-
-	time.tv_sec = 5;
-
-	res = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &time, sizeof(time));
-
-	if (res < 0)
-	{
-			perror("Error setting recv timeout.\n")
-			exit(1);
-	}
-
-}
-int request_list()
+disc_pub_list request_list()
 {
 	struct sockaddr_un server;
-	char tmp[L_tmpnam];
-	char buffer[BUFFER_SIZE];
+	char tmp[L_tmpnam], buffer[BUFFER_SIZE];
 	disc_get_pub_list mesg;
+	disc_pub_list list;
 	int nbytes, fd;
+	socklen_t size;
+	fd_set read;
+	struct timeval time;
+	int res;
 
 	// Fill in the message structure.
 	mesg.msg_type = GET_PUB_LIST;
@@ -48,8 +39,6 @@ int request_list()
 	// Create the client.
 	tmpnam(tmp);
 	fd = setup_discovery_server(tmp);
-
-	set_socket_timeout(fd);
 
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
@@ -61,30 +50,73 @@ int request_list()
 	// Implement a 5 second wait.
 	if (nbytes < 0)
 	{
-		perror("Error sending\n");
+		perror("Error sending");
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server, sizeof(server));
-	if (nbytes < 0)
+	// Set up the timer for select
+	time.tv_sec = 5;
+	time.tv_usec = 0;
+
+	// Add the file descriptor to the set.
+	FD_ZERO(&read);
+	FD_SET(fd, &read);
+
+	res = select(fd+1, &read, NULL, NULL, &time);
+	
+	// Print out error message and exit.
+	if (res < 0)
 	{
-		perror("Error reading")
+		perror("Select error or timeout reached\n");
+		close(fd);
+		exit(1);
 	}
 
-	exit(1);
-	return 0;
+	// Print timeout reached and exit.
+	if (res == 0)
+	{
+		printf("Timeout reached. No messages received...exiting..\n");
+		close(fd);
+		exit(1);
+	}
+
+	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server, &size);
+
+	if (nbytes < 0)
+	{
+		perror("Error reading\n");
+	}
+
+	printf("bytes: %i\n", nbytes, sizeof(disc_pub_list));
+	if (nbytes == sizeof(disc_pub_list))
+	{
+		printf("Publisher list received from discovery service\n");
+		memset(&list, 0, sizeof(list));
+		memcpy(&list, &buffer, sizeof(list));
+
+		if (list.num_publishers == 0)
+		{
+			printf("There are no publishers available..exiting.\n");
+			close(fd);
+			exit(1);
+		}
+	}
+	close(fd);
+	return list;
 }
+
 int main(int argc, char *argv[])
 {
 	// Variables
 	int fd;
 	int bytes;
 	int found;
-	char buffer[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
 	int init_read = -1;
 	int length;
+	dis_pub_list pub_list;
 
-	request_list();
+	pub_list = request_list();
 	
 	// Check to see if there are valid arguments.
 	if (argc < 2)
