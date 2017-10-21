@@ -17,8 +17,63 @@
 #include <unistd.h>
 #include "unixnitslib.h"
 
-#define ARRAY_SIZE 256
+#define ARRAY_SIZE 1024
 
+void set_socket_timeout(int fd) {
+	struct timeval time;
+	int res;
+
+	time.tv_sec = 5;
+
+	res = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &time, sizeof(time));
+
+	if (res < 0)
+	{
+			perror("Error setting recv timeout.\n")
+			exit(1);
+	}
+
+}
+int request_list()
+{
+	struct sockaddr_un server;
+	char tmp[L_tmpnam];
+	char buffer[BUFFER_SIZE];
+	disc_get_pub_list mesg;
+	int nbytes, fd;
+
+	// Fill in the message structure.
+	mesg.msg_type = GET_PUB_LIST;
+
+	// Create the client.
+	tmpnam(tmp);
+	fd = setup_discovery_server(tmp);
+
+	set_socket_timeout(fd);
+
+	// Set the discovery service information.
+	server.sun_family = AF_LOCAL;
+	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+
+	// Send the message to the discovery service.
+	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
+
+	// Implement a 5 second wait.
+	if (nbytes < 0)
+	{
+		perror("Error sending\n");
+		exit(1);
+	}
+
+	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server, sizeof(server));
+	if (nbytes < 0)
+	{
+		perror("Error reading")
+	}
+
+	exit(1);
+	return 0;
+}
 int main(int argc, char *argv[])
 {
 	// Variables
@@ -29,6 +84,8 @@ int main(int argc, char *argv[])
 	int init_read = -1;
 	int length;
 
+	request_list();
+	
 	// Check to see if there are valid arguments.
 	if (argc < 2)
 	{
