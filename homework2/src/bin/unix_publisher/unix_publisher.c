@@ -23,28 +23,37 @@
 #define ARRAY_SIZE 1024
 
 void advertise() {
+	// Variables
 	struct sockaddr_un server, addr;
+	char buffer[L_tmpnam];
+	disc_advertise mesg;
+	int nbytes, fd;
 
 	// Copy the publisher path to the server_addr path and set
 	strncpy(addr.sun_path, PATH, sizeof(addr.sun_path) - 1);
 
-	disc_advertise mesg;
-
+	// Fill in the message structure.
 	mesg.msg_type = ADVERTISE;
-  mesg.pubaddr_size = sizeof(addr.sun_path);
+ 	mesg.pubaddr_size = sizeof(addr.sun_path);
 	mesg.pub_address = addr;
 	
-	int udp_fd = setup_discovery_server("/home/eflores4/discli");
+	// Create the client.
+	tmpnam(buffer);
+	fd = setup_discovery_server(buffer);
 
+	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
 	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
-	int nbytes;
-	//	while(1){
-	nbytes = sendto(udp_fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
-	//	}
-	printf("BYTES: %i\n",nbytes);
-	exit(1);
+	
+	// Send the message to the discovery service.
+	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
+	
+	if (nbytes < 0)
+	{
+		perror("Error sending\n");
+	}
 
+	close(fd);
 }
 
 int main(int argc, char *argv[])
@@ -60,6 +69,8 @@ int main(int argc, char *argv[])
 	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
+
+	advertise();
 
 	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
 	{
