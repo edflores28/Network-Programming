@@ -23,11 +23,17 @@
 #define ARRAY_SIZE 1024
 
 void advertise() {
-	struct sockaddr_un server;
+	struct sockaddr_un server, addr;
+
+	// Copy the publisher path to the server_addr path and set
+	strncpy(addr.sun_path, PATH, sizeof(addr.sun_path) - 1);
+
 	disc_advertise mesg;
 
 	mesg.msg_type = ADVERTISE;
-
+  mesg.pubaddr_size = sizeof(addr.sun_path);
+	mesg.pub_address = addr;
+	
 	int udp_fd = setup_discovery_server("/home/eflores4/discli");
 
 	server.sun_family = AF_LOCAL;

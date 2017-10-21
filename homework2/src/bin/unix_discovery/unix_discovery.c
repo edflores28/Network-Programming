@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
       {
         pub_addrs[total_pubs] = pub_mesg.pub_address;
         total_pubs++;
-
+        printf("got this size: %i", pub_mesg.pubaddr_size);
         memset(&pub_mesg, 0, sizeof(pub_mesg));
       }
     }
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         {
           disc_mesg.msg_type = PUB_LIST;
           disc_mesg.num_publishers = total_pubs;
-          
+
 	  memcpy(&disc_mesg.address[0], &pub_addrs, sizeof(disc_mesg.address));
 
           sendto(fd, &pub_mesg, sizeof(pub_mesg), 0, (struct sockaddr *)&client, sizeof(client));
