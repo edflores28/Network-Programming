@@ -17,8 +17,9 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include "unixnitslib.h"
+#include "config.h"
 
-#define ARRAY_SIZE 256
+#define ARRAY_SIZE 1024
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
 
-	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
+	if (setup_publisher (UNIX_PATH) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
@@ -68,8 +69,7 @@ int main(int argc, char *argv[])
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			res = strcmp("QUIT", buffer);
-			if (res == 0)
+			if (strcmp("QUIT", buffer))
 			{
 				printf("QUIT received, exiting..\n");
 				close(fd);
@@ -109,11 +109,12 @@ int main(int argc, char *argv[])
 				}
 
 				// Transferring the requested article.
-				while(fgets(buffer, sizeof(buffer),file))
+				while(fread(buffer, sizeof(buffer),1,file))
 					write(fd,buffer,ARRAY_SIZE-1);
 
 				printf("Finished sending to the subscriber\n");
 				close(fd);
+				fclose(file);
 			}
 
 			// Close the file descriptor if the article is

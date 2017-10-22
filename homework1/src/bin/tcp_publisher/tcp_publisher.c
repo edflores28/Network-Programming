@@ -18,9 +18,7 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 
-#define MY_PORT	8404
-
-#define ARRAY_SIZE 256
+#define ARRAY_SIZE 1024
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +35,7 @@ int main(int argc, char *argv[])
 	char netArticle[] = "/home/net_class/474/Articles/";
 
 	// Obtain the socket, exit if there is an error.
-	if ((fd = setup_publisher (MY_PORT)) == NITS_SOCKET_ERROR)
+	if ((fd = setup_publisher (TCP_PORT)) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
@@ -70,10 +68,11 @@ int main(int argc, char *argv[])
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if (strcmp(buffer, "QUIT") == 0);
+			if (strcmp(buffer, "QUIT") == 0)
 			{
 				printf("QUIT received, exiting..\n");
-				break;
+				close(fd);
+				exit(0);
 			}
 
 			// Clear the article buffer and determine
