@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
 	char article[ARRAY_SIZE];
 	FILE *file;
 	int found = -1;
+	int res;
 
 	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-// Run the loop until terminated
+	// Run the loop until terminated
 	while(1)
 	{
 			// Obtain the file descriptor for the subscriber.
@@ -67,10 +68,12 @@ int main(int argc, char *argv[])
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if (strcmp(buffer, "QUIT") == 0);
+			res = strcmp("QUIT", buffer);
+			if (res == 0)
 			{
 				printf("QUIT received, exiting..\n");
-				break;
+				close(fd);
+				exit(0);
 			}
 
 			// Clear the article buffer and determine

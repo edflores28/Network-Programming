@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
 	char buffer[ARRAY_SIZE];
 	int init_read = -1;
 	int length;
+	int list = -1;
+	FILE *file;
 
 	// Check to see if there are valid arguments.
 	if (argc < 2)
@@ -46,6 +48,8 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	list = strcmp("LIST", argv[1]);
+
 	printf("Sending %s to the publisher\n", argv[1]);
 
 	// Send the Article that the subscriber wants from the publisher
@@ -58,32 +62,41 @@ int main(int argc, char *argv[])
 
 	// Obtain a handle to write what we receive from the publisher.
 	// Exit is there is an error.
-	FILE *file;
-	file = fopen(argv[1], "wb");
+	//FILE *file;
+	//file = fopen(argv[1], "wb");
 
-	if (file == NULL)
-	{
-		perror("Unable to open and write the file");
-		close(fd);
-		exit(1);
-	}
+	//if (file == NULL)
+	//{
+	//	perror("Unable to open and write the file");
+	//	close(fd);
+	//	exit(1);
+//	}
 
+	if (list == 0)
+		printf("\nThe following files are available to be requested:\n\n");
 	// Read from the socket until there is is no more
 	// data available from the subscriber. Also
 	// write to the file.
-	while(bytes != 0)
+	while(1)
 	{
 		bytes = read(fd,buffer,255);
+	
+		// If there are no bytes read break from the while loop.
+		if (bytes == 0)
+			break;
 
-		// If nothing comes from the buffer in the initial read
-		// break from the loop, otherwhise do not break.
+		// At this point bytes are read and if it is the initial
+		// loop open the file to write.
 		if (init_read == -1)
-			if (bytes == 0)
-				break;
-			else
-				init_read = 0;
-
-		fputs(buffer, file);
+		{
+			init_read = 0;
+			file = fopen(argv[1], "wb");
+		}
+		
+		if (list == 0)
+			printf("%s",buffer);
+		else
+			fputs(buffer, file);
 	}
 
 	// Print out a message if there were no bytes reads.
