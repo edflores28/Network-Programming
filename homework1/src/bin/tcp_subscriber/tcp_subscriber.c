@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
-		if (init_read == -1)
+			if ((init_read == -1) && (list != 0))
 		{
 			init_read = 0;
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Print out a message if there were no bytes reads.
-	if ((init_read == -1) && (list !=0))
+	if ((init_read == -1) && (list != 0))
 		printf("There was nothing recieved from the publisher\n");
 
 	// Do some cleanup.
