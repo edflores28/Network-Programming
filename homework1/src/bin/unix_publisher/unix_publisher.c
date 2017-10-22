@@ -58,13 +58,16 @@ int main(int argc, char *argv[])
 			bytes = read(fd, buffer, ARRAY_SIZE-1);
 
 			if (bytes < 0)
-				printf("Error Reading\n");
+			{
+				printf("Error Reading.. exiting..\n");
+				exit(1);
+			}
 
 			printf("Recieved %s from the subscriber\n", buffer);
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if ((bytes == 4) && (buffer[0] == 'Q') && (buffer[1] == 'U') && (buffer[2] == 'I') && (buffer[3] == 'T'))
+			if (strcmp(buffer, "QUIT") == 0);
 			{
 				printf("QUIT received, exiting..\n");
 				break;
