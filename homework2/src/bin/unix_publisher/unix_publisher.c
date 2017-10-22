@@ -36,7 +36,7 @@ void advertise() {
 	mesg.msg_type = ADVERTISE;
  	mesg.pubaddr_size = sizeof(addr.sun_path);
 	mesg.pub_address = addr;
-	
+
 	// Create the client.
 	tmpnam(buffer);
 	fd = setup_discovery_server(buffer);
@@ -44,10 +44,10 @@ void advertise() {
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
 	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
-	
+
 	// Send the message to the discovery service.
 	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
-	
+
 	if (nbytes < 0)
 	{
 		perror("Error sending\n");
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-// Run the loop until terminated
+	// Run the loop until terminated
 	while(1)
 	{
 			// Obtain the file descriptor for the subscriber.
@@ -96,16 +96,20 @@ int main(int argc, char *argv[])
 			bytes = read(fd, buffer, ARRAY_SIZE-1);
 
 			if (bytes < 0)
-				printf("Error Reading\n");
+			{
+				printf("Error Reading.. exiting..\n");
+				exit(1);
+			}
 
 			printf("Recieved %s from the subscriber\n", buffer);
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if ((bytes == 4) && (buffer[0] == 'Q') && (buffer[1] == 'U') && (buffer[2] == 'I') && (buffer[3] == 'T'))
+			if (strcmp("QUIT", buffer) == 0)
 			{
 				printf("QUIT received, exiting..\n");
-				break;
+				close(fd);
+				exit(0);
 			}
 
 			// Clear the article buffer and determine
@@ -141,11 +145,24 @@ int main(int argc, char *argv[])
 				}
 
 				// Transferring the requested article.
-				while(fgets(buffer, sizeof(buffer),file))
-					write(fd,buffer,ARRAY_SIZE-1);
+				while(1)
+				{
+					bytes = fread(buffer, 1, ARRAY_SIZE, file);
+
+					// Break from the loop is no bytes are read.
+					if (bytes == 0)
+						break;
+
+					// Send to the subscriber
+					write(fd,buffer,ARRAY_SIZE);
+
+					// Clear the buffer.
+					memset(&buffer, 0, sizeof(buffer));
+				}
 
 				printf("Finished sending to the subscriber\n");
 				close(fd);
+				fclose(file);
 			}
 
 			// Close the file descriptor if the article is
