@@ -17,6 +17,7 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include "tcpnitslib.h"
+#include "config.h"
 
 #define ARRAY_SIZE 1024
 
