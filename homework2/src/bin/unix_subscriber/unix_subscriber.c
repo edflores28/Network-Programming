@@ -111,14 +111,14 @@ int main(int argc, char *argv[])
 	int fd;
 	int bytes;
 	int found;
-	char buffer[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
 	int init_read = -1;
 	int length;
 	int list = -1;
+	int user;
+	char article[BUFFER_SIZE];
 	FILE *file;
 	dis_pub_list pub_list;
-
-	pub_list = request_list();
 
 	// Check to see if there are valid arguments.
 	if (argc < 2)
@@ -127,9 +127,21 @@ int main(int argc, char *argv[])
 		exit (1);
 	}
 
-	// Obtain the socket file descriptor for the subscriber.
-	// Exit is there is an error
-	fd = setup_subscriber(UNIX_PATH);
+	pub_list = request_list();
+
+	printf("The following is a list of available publishers:\n");
+	int i;
+	for (i = 0; i < pub_list.num_publishers; i++)
+		printf("%i:\t%s\n", i, pub_list.address[i]);
+
+	printf("Select a publisher (0 - %i)\n", i);
+	scanf("%i", user);
+
+	printf("user: %i", user);
+
+	// Obtain the socket file descriptor for the subscriber based
+	// on the user's input. Exit is there is an error
+	fd = setup_subscriber(pub_list.address[user]);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{
@@ -137,28 +149,30 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
- 	// Determine if the user wants the list of articles.
-	list = strcmp("LIST", argv[1]);
+	// Obtain the list of articles
+	printf("Obtaining the list of articles from the publisher...\n\n");
+	bytes = write(fd,"LIST",4);
 
-	printf("Sending %s to the publisher\n", argv[1]);
+	// Obtain the LIST from the publisher.
+	while(1)
+	{
+		bytes = read(fd,buffer,ARRAY_SIZE);
 
-	// Send the Article that the subscriber wants from the publisher
-	// First make sure we get the size of the file.
-	for (length = 0; length < 64; length++)
-		if (argv[1][length] == 0x00)
+		if (bytes == 0)
 			break;
+	}
 
-	bytes = write(fd,argv[1],length);
-
-	if (list == 0)
-		printf("\nThe following files are available to be requested:\n\n");
+	printf("The following articles are available:\n");
+	printf("%s\n",buffer);
+	printf("Enter the name of the article: \n");
+	scanf("%s", article);
 
 	// Read from the socket until there is is no more
 	// data available from the subscriber. Also
 	// write to the file.
 	while(1)
 	{
-		bytes = read(fd,buffer,ARRAY_SIZE);
+		bytes = read(fd,buffer,BUFFER_SIZE);
 
 		// If there are no bytes read break from the while loop.
 		if (bytes == 0)
@@ -166,7 +180,7 @@ int main(int argc, char *argv[])
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
-		if ((init_read == -1) && (list != 0))
+		if (init_read == -1)
 		{
 			init_read = 0;
 
@@ -182,19 +196,15 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		// If LIST was send print the buffer, otherwise write
-		// to the file.
-		if (list == 0)
-			printf("%s",buffer);
-		else
-			fputs(buffer, file);
+		// Write to the file.
+		fputs(buffer, file);
 
 		// Clear the buffer.
 		memset(&buffer, 0, sizeof(buffer));
 	}
 
 	// Print out a message if there were no bytes reads.
-	if ((init_read == -1) && (list !=0))
+	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
 
 	// Do some cleanup.
