@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	// write to the file.
 	while(1)
 	{
-		bytes = read(fd,buffer,ARRAY_SIZE-1);
+		bytes = read(fd,buffer,ARRAY_SIZE);
 
 		// If there are no bytes read break from the while loop.
 		if (bytes == 0)
@@ -103,15 +103,19 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		// If LIST was send print the buffer, otherwise write
+		// to the file.
 		if (list == 0)
 			printf("%s",buffer);
 		else
 			fputs(buffer, file);
+
+		// Clear the buffer.
+		memset(&buffer, 0, sizeof(buffer));
 	}
 
-
 	// Print out a message if there were no bytes reads.
-	if (init_read == -1)
+	if ((init_read == -1) && (list !=0))
 		printf("There was nothing recieved from the publisher\n");
 
 	// Do some cleanup.

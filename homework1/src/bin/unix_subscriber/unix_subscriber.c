@@ -94,11 +94,13 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		// If LIST was send print the buffer, otherwise write
+		// to the file.
 		if (list == 0)
 			printf("%s",buffer);
 		else
 			fputs(buffer, file);
-	
+
 		// Clear the buffer.
 		memset(&buffer, 0, sizeof(buffer));
 	}

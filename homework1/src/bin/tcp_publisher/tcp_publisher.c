@@ -108,9 +108,21 @@ int main(int argc, char *argv[])
 				}
 
 				// Transferring the requested article.
-				while(fread(buffer, sizeof(buffer),1,file))
-					write(fd,buffer,ARRAY_SIZE-1);
+				while(1)
+				{
+					bytes = fread(buffer, 1, ARRAY_SIZE, file);
 
+					// Break from the loop is no bytes are read.
+					if (bytes == 0)
+						break;
+
+					// Send to the subscriber
+					write(fd,buffer,ARRAY_SIZE);
+
+					// Clear the buffer.
+					memset(&buffer, 0, sizeof(buffer));
+				}
+				
 				printf("Finished sending to the subscriber\n");
 				close(fd);
 				fclose(file);
