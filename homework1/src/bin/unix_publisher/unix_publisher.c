@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
 			// Check to see if QUIT was received,
 			// If so break from the while loop
-			if (strcmp("QUIT", buffer))
+			if (strcmp("QUIT", buffer) == 0)
 			{
 				printf("QUIT received, exiting..\n");
 				close(fd);
@@ -109,8 +109,18 @@ int main(int argc, char *argv[])
 				}
 
 				// Transferring the requested article.
-				while(fread(buffer, sizeof(buffer),1,file))
-					write(fd,buffer,ARRAY_SIZE-1);
+				while(1)
+				{
+					bytes = fread(buffer, 1, ARRAY_SIZE, file);
+
+					if (bytes == 0)
+						break;
+
+					write(fd,buffer,ARRAY_SIZE);
+					
+					// Clear the buffer.
+					memset(&buffer, 0, sizeof(buffer));
+				}
 
 				printf("Finished sending to the subscriber\n");
 				close(fd);

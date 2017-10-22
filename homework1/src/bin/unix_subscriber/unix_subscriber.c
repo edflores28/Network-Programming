@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-  // Determine if the user wants the list of articles.
+ 	// Determine if the user wants the list of articles.
 	list = strcmp("LIST", argv[1]);
 
 	printf("Sending %s to the publisher\n", argv[1]);
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	// write to the file.
 	while(1)
 	{
-		bytes = read(fd,buffer,ARRAY_SIZE-1);
+		bytes = read(fd,buffer,ARRAY_SIZE);
 
 		// If there are no bytes read break from the while loop.
 		if (bytes == 0)
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
-		if (init_read == -1)
+		if ((init_read == -1) && (list != 0))
 		{
 			init_read = 0;
 
@@ -98,10 +98,13 @@ int main(int argc, char *argv[])
 			printf("%s",buffer);
 		else
 			fputs(buffer, file);
+	
+		// Clear the buffer.
+		memset(&buffer, 0, sizeof(buffer));
 	}
 
 	// Print out a message if there were no bytes reads.
-	if (init_read == -1)
+	if ((init_read == -1) && (list !=0))
 		printf("There was nothing recieved from the publisher\n");
 
 	// Do some cleanup.
