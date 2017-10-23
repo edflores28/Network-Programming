@@ -19,6 +19,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include "unixnitslib.h"
+#include "config.h"
 
 #define ARRAY_SIZE 1024
 
@@ -30,7 +31,7 @@ void advertise() {
 	int nbytes, fd;
 
 	// Copy the publisher path to the server_addr path and set
-	strncpy(addr.sun_path, PATH, sizeof(addr.sun_path) - 1);
+	strncpy(addr.sun_path, UNIX_PATH, sizeof(addr.sun_path) - 1);
 
 	// Fill in the message structure.
 	mesg.msg_type = ADVERTISE;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 
 	advertise();
 
-	if (setup_publisher (PATH) == NITS_SOCKET_ERROR)
+	if (setup_publisher (UNIX_PATH) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
