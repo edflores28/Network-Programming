@@ -14,8 +14,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include "unixnitslib.h"
@@ -70,6 +72,7 @@ void child_process(int fd)
 	FILE *file;
 	int found = -1;
 
+	while(1){
 	// Clear the buffer and read which article the subscriber requested
 	memset(&buffer[0],0,sizeof(buffer));
 	bytes = read(fd, buffer, ARRAY_SIZE-1);
@@ -88,6 +91,7 @@ void child_process(int fd)
 	{
 		printf("QUIT received, exiting..\n");
 		close(fd);
+		kill(getppid(), SIGTERM);
 		exit(0);
 	}
 
@@ -151,11 +155,12 @@ void child_process(int fd)
 		close(fd);
 	}
 }
+}
 int main(int argc, char *argv[])
 {
 	// Variables
 	int fd;
-	pid_t pId;
+	pid_t pID;
 
 	advertise();
 
@@ -188,10 +193,9 @@ int main(int argc, char *argv[])
 				perror("Failed to fork!\n");
 				exit(1);
 			}
+			close(fd);
+
 	}
 
-	// Do some cleanup.
-	close(fd);
-	fclose(file);
 	exit (0);
 }
