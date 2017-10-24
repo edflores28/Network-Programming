@@ -1,5 +1,5 @@
 /*
- *Project: Assignment 1
+ *Project: Assignment 2
  *
  *Progam: tcp_subscriber
  *File Name: tcp_subscriber.c
@@ -21,6 +21,11 @@
 
 #define BUFFER_SIZE 1024
 
+/**
+*	This method creates a datagram socket that will
+* connect to the dicovery service which will request
+* the available publishers.
+*/
 disc_pub_list request_list()
 {
 	struct sockaddr_un server;
@@ -105,15 +110,16 @@ disc_pub_list request_list()
 	return list;
 }
 
+/**
+*	The main program.
+*/
 int main(int argc, char *argv[])
 {
 	// Variables
-	int fd;
-	int bytes;
-	int found, res;
+	int fd, bytes, found, res;
+	int length, user, i;
 	char buffer[BUFFER_SIZE];
 	int init_read = -1;
-	int length, user, i;
 	int list = -1;
 	char article[128];
 	FILE *file;
@@ -128,20 +134,36 @@ int main(int argc, char *argv[])
 		exit (1);
 	}
 
+	// Request the the available publishers from the
+	// discovery service.
 	pub_list = request_list();
 
 	printf("The following is a list of available publishers:\n");
-	
+
 	for (i = 0; i < pub_list.num_publishers; i++)
 		printf("%i:\t%s\n", i, pub_list.address[i].sun_path);
 
-	printf("Select a publisher (0 - %i): ", i-1);
+	printf("Enter 6 to QUIT or -\n")
+	printf("Select a publisher (1 - %i)", i);
 	scanf("%i", &user);
+
+	if (user == 11)
+		exit(0);
+
+	// Decrement the user's input and see if the
+	// selection is within range. If the value is not
+	// within range, exit.
+	user--;
+	if ((user >= i )&& (user < 0))
+	{
+		printf("Invalid selection. exiting.");
+		exit(0);
+	}
 
 	// Obtain the socket file descriptor for the subscriber based
 	// on the user's input. Exit is there is an error
 	fd = setup_subscriber((char *)pub_list.address[user].sun_path);
-	
+
 	if (fd == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "There was an error creating the subscriber.\n");
@@ -152,21 +174,22 @@ int main(int argc, char *argv[])
 	printf("\nObtaining the list of articles from the publisher...\n\n");
 	bytes = write(fd,"LIST",4);
 
-	printf("bytes: %i\n", bytes);
-
 	// Obtain the LIST from the publisher. Assuming that the publisher will
 	// only send the buffer size of data.
 	bytes = read(fd,buffer,BUFFER_SIZE);
 
+	// Ask the user's input on which publisher that they want to use.
 	printf("The following articles are available:\n");
 	printf("%s\n",buffer);
 
 	memset(&article, 0, sizeof(article));
 
+	printf("Enter QUIT to kill the publisher or -\n")
 	printf("Enter the name of the article: ");
 	scanf("%s",article);
 	printf("\n");
 
+	// Obtain the length of the user's input.
 	for (i = 0; i < BUFFER_SIZE; i++)
 	{
 		if (article[i] == 0)
@@ -177,23 +200,33 @@ int main(int argc, char *argv[])
 
 	printf("Requesting %s\n",article);
 	bytes = write(fd, article, length);
- 	
-	printf("BYTES %i\n", bytes);
 
+	// If the user entered QUIT we will exit the
+	// the program since the server will not send
+	// any response.
+	if (strcmp("QUIT", article) == 0)
+	{
+			printf("QUIT entered, exiting.")
+			close(fd);
+			exit(0);
+	}
+
+	// Set up the select system call to sleep
+	// for 100ms. This will help to not block
+	// on the read call when we need to exit.
 	time.tv_sec = 0;
 	time.tv_usec = 100000;
-	
+
 	FD_ZERO(&timeout);
 	FD_SET(fd, &timeout);
 
 	// Read from the socket until there is is no more
-	// data available from the subscriber. Also
-	// write to the file.
+	// data from the publisher. Once the timeout of
+	// 100ms is reached we will break from the loop.
 	while(1)
 	{
-		printf("inside while:%i\n",bytes);
 		res = select(fd+1, &timeout, NULL, NULL, &time);
-		
+
 		if (res == 0)
 			break;
 
@@ -224,7 +257,6 @@ int main(int argc, char *argv[])
 		memset(&buffer, 0, sizeof(buffer));
 	}
 
-	printf("ehrere\n");
 	// Print out a message if there were no bytes reads.
 	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
