@@ -117,7 +117,8 @@ int main(int argc, char *argv[])
 {
 	// Variables
 	int fd, bytes, found, res;
-	int length, user, i;
+	int length = 0; 
+	int user, i;
 	char buffer[BUFFER_SIZE];
 	int init_read = -1;
 	int list = -1;
@@ -141,10 +142,10 @@ int main(int argc, char *argv[])
 	printf("The following is a list of available publishers:\n");
 
 	for (i = 0; i < pub_list.num_publishers; i++)
-		printf("%i:\t%s\n", i, pub_list.address[i].sun_path);
+		printf("%i:\t%s\n", i+1, pub_list.address[i].sun_path);
 
-	printf("Enter 6 to QUIT or -\n")
-	printf("Select a publisher (1 - %i)", i);
+	printf("Enter 6 to QUIT or -\n");
+	printf("Select a publisher (1 - %i): ", i);
 	scanf("%i", &user);
 
 	if (user == 11)
@@ -174,6 +175,9 @@ int main(int argc, char *argv[])
 	printf("\nObtaining the list of articles from the publisher...\n\n");
 	bytes = write(fd,"LIST",4);
 
+	if (bytes < 0)
+		perror("Error writing\n");
+
 	// Obtain the LIST from the publisher. Assuming that the publisher will
 	// only send the buffer size of data.
 	bytes = read(fd,buffer,BUFFER_SIZE);
@@ -184,7 +188,7 @@ int main(int argc, char *argv[])
 
 	memset(&article, 0, sizeof(article));
 
-	printf("Enter QUIT to kill the publisher or -\n")
+	printf("Enter QUIT to kill the publisher or -\n");
 	printf("Enter the name of the article: ");
 	scanf("%s",article);
 	printf("\n");
@@ -198,18 +202,24 @@ int main(int argc, char *argv[])
 		length++;
 	}
 
-	printf("Requesting %s\n",article);
-	bytes = write(fd, article, length);
-
+	printf ("length: %i\n", length);	
 	// If the user entered QUIT we will exit the
 	// the program since the server will not send
 	// any response.
 	if (strcmp("QUIT", article) == 0)
 	{
-			printf("QUIT entered, exiting.")
+			write(fd, "QUIT", 4);
+			printf("QUIT entered, exiting.\n");
 			close(fd);
 			exit(0);
 	}
+
+	printf("Requesting %s\n",article);
+	bytes = write(fd, article, length);
+
+	if (bytes < 0)
+		perror("Error writing\n");
+
 
 	// Set up the select system call to sleep
 	// for 100ms. This will help to not block
@@ -225,10 +235,15 @@ int main(int argc, char *argv[])
 	// 100ms is reached we will break from the loop.
 	while(1)
 	{
+		printf("bytes %i res %i\n",bytes,res);
+
 		res = select(fd+1, &timeout, NULL, NULL, &time);
 
-		if (res == 0)
+		if (res == 0){
+			printf("BREAK");
 			break;
+			printf("BREAK");
+		}
 
 		bytes = read(fd,buffer,BUFFER_SIZE);
 
