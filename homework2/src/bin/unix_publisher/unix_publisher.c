@@ -29,7 +29,7 @@ char myArticle[] = "/home/eflores4/Articles/";
 char netArticle[] = "/home/net_class/474/Articles/";
 
 /**
-*	This method creates a datagram socket that will
+* This method creates a datagram socket that will
 * connect to the dicovery service. The publisher will
 * send it's address to the publisher.
 */
@@ -68,7 +68,7 @@ void advertise() {
 }
 
 /**
-*	This method is the method that the child process will exexute.
+* This method is the method that the child process will execute.
 * This handles the communication to the subscriber.
 */
 void child_process(int fd)
@@ -84,16 +84,20 @@ void child_process(int fd)
 	{
 		// Clear the buffer and read which article the subscriber requested
 		memset(&buffer[0],0,sizeof(buffer));
-		bytes = read(fd, buffer, ARRAY_SIZE-1);
+		bytes = read(fd, buffer, ARRAY_SIZE);
 
 		if (bytes < 0)
 		{
 			printf("Error Reading.. exiting..\n");
 			exit(1);
 		}
-
+		
+		
 		printf("Recieved %s from the subscriber\n", buffer);
-
+		
+		if (bytes == 0) exit(1);
+	
+		printf("here");	
 		// Check to see if QUIT was received, If so
 		// close the socket and send the term signal
 		// to the parent process.
@@ -101,8 +105,8 @@ void child_process(int fd)
 		{
 			printf("QUIT received, exiting..\n");
 			close(fd);
-			kill(getppid(), SIGTERM);
-			exit(0);
+			kill(getppid(), SIGKILL);
+			exit(1);
 		}
 
 		// Clear the article buffer and determine
@@ -125,6 +129,8 @@ void child_process(int fd)
 			found = access(article,F_OK|R_OK);
 		}
 
+		printf("net found %i\n",found);
+
 		// If the article is found send it to the subscriber.
 		if (found == 0)
 		{
@@ -140,15 +146,17 @@ void child_process(int fd)
 			// Transferring the requested article.
 			while(1)
 			{
-				bytes = fread(buffer, 1, ARRAY_SIZE, file);
-
+				printf("before fread\n");
+				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
+				
 				// Break from the loop is no bytes are read.
 				if (bytes == 0)
 					break;
 
+				printf("Before Write");
 				// Send to the subscriber
-				write(fd,buffer,ARRAY_SIZE);
-
+				bytes = write(fd,buffer,ARRAY_SIZE);
+				printf("bytes written %i\n", bytes);
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));
 			}
@@ -194,21 +202,21 @@ int main(int argc, char *argv[])
 			}
 
 			// Create a child process
-			pID = fork();
+			//pID = fork();
 
 			// Exit if there is an error.
-			if (pID < 0){
-				perror("Failed to fork!\n");
-				exit(1);
-			}
+			//if (pID < 0){
+			//	perror("Failed to fork!\n");
+			//	exit(1);
+			//}
 
 			// Have the child process do it's work.
-			if (pID == 0){
+			//if (pID == 0){
 				child_process(fd);
-			}
+		//	}
 
 			// Parent has no need for the file desciptor
-			close(fd);
+			//close(fd);
 	}
 
 	exit (0);

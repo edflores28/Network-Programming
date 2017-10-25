@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	// Set up the select system call to sleep
 	// for 100ms. This will help to not block
 	// on the read call when we need to exit.
-	time.tv_sec = 0;
+	time.tv_sec = 3;
 	time.tv_usec = 100000;
 
 	FD_ZERO(&timeout);
@@ -185,7 +185,11 @@ int main(int argc, char *argv[])
 	bytes = write(fd,"LIST",4);
 
 	if (bytes < 0)
+	{
 		perror("Error writing\n");
+		close(fd);
+		exit(1);
+	}
 
 	// Obtain the LIST from the publisher. Assuming that the publisher will
 	// only send the buffer size of data.
@@ -219,14 +223,18 @@ int main(int argc, char *argv[])
 		// any response.
 		if (strcmp("QUIT", article) == 0)
 		{
-				write(fd, "QUIT", 4);
-				printf("QUIT entered, exiting.\n");
+				bytes = write(fd, "QUIT", 4);
+				printf("QUIT entered, exiting.%i\n",bytes);
 				close(fd);
 				exit(0);
 		}
 
 		printf("Requesting %s\n",article);
 		bytes = write(fd, article, length);
+		
+		length = 0;
+
+		printf("bytes written %i\n", bytes);
 
 		if (bytes < 0)
 		{
@@ -240,11 +248,12 @@ int main(int argc, char *argv[])
 		while(1)
 		{
 			res = select(fd+1, &timeout, NULL, NULL, &time);
-
+			printf("res %i\n", res);
 			if (res == 0)
 				break;
 
 			bytes = read(fd,buffer,BUFFER_SIZE);
+			printf("bytes read: %i\n", bytes);
 
 			// At this point bytes are read and if it is the initial
 			// loop open the file to write.
@@ -263,7 +272,7 @@ int main(int argc, char *argv[])
 					exit(1);
 				}
 
-				printf("Opened the file for writing.\n")
+				printf("Opened the file for writing.\n");
 			}
 
 			// Write to the file.
@@ -273,7 +282,7 @@ int main(int argc, char *argv[])
 			memset(&buffer, 0, sizeof(buffer));
 		}
 
-		printf("Finished writing to the file");
+		printf("Finished writing to the file\n");
 
 		// Print out a message if there were no bytes reads.
 		if (init_read == -1)
