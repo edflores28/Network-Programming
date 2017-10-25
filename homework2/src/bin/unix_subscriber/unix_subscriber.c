@@ -224,10 +224,6 @@ int main(int argc, char *argv[])
 	printf("Requesting %s\n",article);
 	bytes = write(fd, article, length);
 
-	length = 0;
-
-	printf("bytes written %i\n", bytes);
-
 	if (bytes < 0)
 	{
 		perror("Error writing\n");
@@ -245,7 +241,6 @@ int main(int argc, char *argv[])
 			break;
 
 		bytes = read(fd,buffer,BUFFER_SIZE);
-		printf("bytes read: %i\n", bytes);
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
@@ -280,8 +275,8 @@ int main(int argc, char *argv[])
 	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
 
-	printf("Press ENTER to kill the subscriber and publisher\n");
-	printf("This will interrupt other clients as well.\n");
+	printf("Enter QUIT\n");
+	printf("This will interrupt other clients as well: ");
 	scanf("%s",article);
 
 	// Send QUIT to kill the publisher.

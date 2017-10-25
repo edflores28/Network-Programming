@@ -142,7 +142,6 @@ void child_process(int fd)
 			// Transferring the requested article.
 			while(1)
 			{
-				printf("before fread\n");
 				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
 
 				// Break from the loop is no bytes are read.
