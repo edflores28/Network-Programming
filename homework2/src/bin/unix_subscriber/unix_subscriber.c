@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	// Set up the select system call to sleep
 	// for 100ms. This will help to not block
 	// on the read call when we need to exit.
-	time.tv_sec = 3;
+	time.tv_sec = 0;
 	time.tv_usec = 100000;
 
 	FD_ZERO(&timeout);
@@ -195,100 +195,98 @@ int main(int argc, char *argv[])
 	// only send the buffer size of data.
 	bytes = read(fd,buffer,BUFFER_SIZE);
 
-	// Loop until user enters QUIT.
-	while(1)
+	if (bytes < 0)
 	{
-		// Ask the user's input on which publisher that they want to use.
-		printf("The following articles are available:\n");
-		printf("%s\n",buffer);
+		perror("Error reading\n");
+		close(fd);
+		exit(1);
+	}
 
-		memset(&article, 0, sizeof(article));
+	// Ask the user's input on which publisher that they want to use.
+	printf("The following articles are available:\n");
+	printf("%s\n",buffer);
 
-		printf("Enter QUIT to kill the publisher or -\n");
-		printf("Enter the name of the article: ");
-		scanf("%s",article);
-		printf("\n");
+	memset(&article, 0, sizeof(article));
 
-		// Obtain the length of the user's input.
-		for (i = 0; i < BUFFER_SIZE; i++)
-		{
-			if (article[i] == 0)
-				break;
+	printf("Enter the name of the article: ");
+	scanf("%s",article);
+	printf("\n");
+
+	// Obtain the length of the user's input.
+	for (i = 0; i < BUFFER_SIZE; i++)
+	{
+		if (article[i] == 0)
+			break;
 
 			length++;
-		}
+	}
 
-		// If the user entered QUIT we will exit the
-		// the program since the server will not send
-		// any response.
-		if (strcmp("QUIT", article) == 0)
+	printf("Requesting %s\n",article);
+	bytes = write(fd, article, length);
+
+	length = 0;
+
+	printf("bytes written %i\n", bytes);
+
+	if (bytes < 0)
+	{
+		perror("Error writing\n");
+		exit(1);
+	}
+
+	// Read from the socket until there is is no more
+	// data from the publisher. Once the timeout of
+	// 100ms is reached we will break from the loop.
+	while(1)
+	{
+		res = select(fd+1, &timeout, NULL, NULL, &time);
+
+		if (res == 0)
+			break;
+
+		bytes = read(fd,buffer,BUFFER_SIZE);
+		printf("bytes read: %i\n", bytes);
+
+		// At this point bytes are read and if it is the initial
+		// loop open the file to write.
+		if (init_read == -1)
 		{
-				bytes = write(fd, "QUIT", 4);
-				printf("QUIT entered, exiting.%i\n",bytes);
-				close(fd);
-				exit(0);
-		}
+			init_read = 0;
 
-		printf("Requesting %s\n",article);
-		bytes = write(fd, article, length);
-		
-		length = 0;
+			// Obtain a handle to write what we receive from the publisher.
+			// Exit is there is an error.
+			file = fopen(article, "wb");
 
-		printf("bytes written %i\n", bytes);
-
-		if (bytes < 0)
-		{
-			perror("Error writing\n");
-			exit(1);
-		}
-
-		// Read from the socket until there is is no more
-		// data from the publisher. Once the timeout of
-		// 100ms is reached we will break from the loop.
-		while(1)
-		{
-			res = select(fd+1, &timeout, NULL, NULL, &time);
-			printf("res %i\n", res);
-			if (res == 0)
-				break;
-
-			bytes = read(fd,buffer,BUFFER_SIZE);
-			printf("bytes read: %i\n", bytes);
-
-			// At this point bytes are read and if it is the initial
-			// loop open the file to write.
-			if (init_read == -1)
+			if (file == NULL)
 			{
-				init_read = 0;
-
-				// Obtain a handle to write what we receive from the publisher.
-				// Exit is there is an error.
-				file = fopen(article, "wb");
-
-				if (file == NULL)
-				{
-					perror("Unable to open and write the file");
-					close(fd);
-					exit(1);
-				}
-
-				printf("Opened the file for writing.\n");
+				perror("Unable to open and write the file");
+				close(fd);
+				exit(1);
 			}
 
-			// Write to the file.
-			fputs(buffer, file);
-
-			// Clear the buffer.
-			memset(&buffer, 0, sizeof(buffer));
+			printf("Opened the file for writing.\n");
 		}
 
-		printf("Finished writing to the file\n");
+		// Write to the file.
+		fputs(buffer, file);
 
-		// Print out a message if there were no bytes reads.
-		if (init_read == -1)
-			printf("There was nothing recieved from the publisher\n");
+		// Clear the buffer.
+		memset(&buffer, 0, sizeof(buffer));
 	}
-	
+
+	printf("Finished writing to the file\n");
+
+	// Print out a message if there were no bytes reads.
+	if (init_read == -1)
+		printf("There was nothing recieved from the publisher\n");
+
+	printf("Press ENTER to kill the subscriber and publisher\n");
+	printf("This will interrupt other clients as well.\n");
+	scanf("%s",article);
+
+	// Send QUIT to kill the publisher.
+	bytes = write(fd, "QUIT", 4);
+
 	// Do some cleanup.
 	close(fd);
 	fclose(file);

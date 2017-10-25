@@ -34,6 +34,7 @@ char netArticle[] = "/home/net_class/474/Articles/";
 * send it's address to the publisher.
 */
 void advertise() {
+
 	// Variables
 	struct sockaddr_un server, addr;
 	char buffer[L_tmpnam];
@@ -61,7 +62,8 @@ void advertise() {
 
 	if (nbytes < 0)
 	{
-		perror("Error sending\n");
+		perror("Error advertising to the publisher..exiting.\n");
+		exit(1);
 	}
 
 	close(fd);
@@ -91,13 +93,9 @@ void child_process(int fd)
 			printf("Error Reading.. exiting..\n");
 			exit(1);
 		}
-		
-		
+
 		printf("Recieved %s from the subscriber\n", buffer);
-		
-		if (bytes == 0) exit(1);
-	
-		printf("here");	
+
 		// Check to see if QUIT was received, If so
 		// close the socket and send the term signal
 		// to the parent process.
@@ -129,8 +127,6 @@ void child_process(int fd)
 			found = access(article,F_OK|R_OK);
 		}
 
-		printf("net found %i\n",found);
-
 		// If the article is found send it to the subscriber.
 		if (found == 0)
 		{
@@ -148,15 +144,14 @@ void child_process(int fd)
 			{
 				printf("before fread\n");
 				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
-				
+
 				// Break from the loop is no bytes are read.
 				if (bytes == 0)
 					break;
 
-				printf("Before Write");
 				// Send to the subscriber
 				bytes = write(fd,buffer,ARRAY_SIZE);
-				printf("bytes written %i\n", bytes);
+
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));
 			}
@@ -202,22 +197,21 @@ int main(int argc, char *argv[])
 			}
 
 			// Create a child process
-			//pID = fork();
+			pID = fork();
 
 			// Exit if there is an error.
-			//if (pID < 0){
-			//	perror("Failed to fork!\n");
-			//	exit(1);
-			//}
+			if (pID < 0){
+				perror("Failed to fork!\n");
+				exit(1);
+			}
 
 			// Have the child process do it's work.
-			//if (pID == 0){
+			if (pID == 0){
 				child_process(fd);
-		//	}
+			}
 
 			// Parent has no need for the file desciptor
-			//close(fd);
+			close(fd);
 	}
-
 	exit (0);
 }
