@@ -10,4 +10,5 @@
 *
 */
 #define TCP_PORT 8404
+#define UDP_PORT 8404
 #define UNIX_PATH "/tmp/flores"
