@@ -21,6 +21,49 @@
 
 #define ARRAY_SIZE 1024
 
+/**
+* This method creates a datagram socket that will
+* connect to the dicovery service. The publisher will
+* send it's address to the publisher.
+*/
+void advertise() {
+
+	// Variables
+	struct sockaddr_in server, addr;
+	char buffer[L_tmpnam];
+	disc_advertise mesg;
+	int nbytes, fd;
+	int len = sizeof(struct sockaddr);
+
+	// Fill in the message structure.
+	mesg.msg_type = ADVERTISE;
+ 	mesg.pubaddr_size = sizeof(addr.sun_path);
+	mesg.pub_address = addr;
+
+	// Create the client
+	fd = setup_discovery_server(UDP_PORT);
+
+	getsockname(fd, (struct sockaddr *)&addr, &len);
+
+	printf("%s %i\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+	exit(0);
+
+	// Set the discovery service information.
+	server.sun_family = AF_LOCAL;
+	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+
+	// Send the message to the discovery service.
+	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
+
+	if (nbytes < 0)
+	{
+		perror("Error advertising to the publisher..exiting.\n");
+		exit(1);
+	}
+
+	close(fd);
+}
+
 int main(int argc, char *argv[])
 {
 	// Variables
@@ -31,6 +74,8 @@ int main(int argc, char *argv[])
 	FILE *file;
 	int found = -1;
 
+	advertise();
+	
 	// Path's to look for the articles
 	char myArticle[] = "/home/eflores4/Articles/";
 	char netArticle[] = "/home/net_class/474/Articles/";
