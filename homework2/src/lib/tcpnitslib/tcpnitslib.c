@@ -100,7 +100,7 @@ int setup_publisher(int port)
 		return NITS_SOCKET_ERROR;
 	}
 
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
 		perror("setsockopt error");
 		return NITS_SOCKET_ERROR;
 	}
