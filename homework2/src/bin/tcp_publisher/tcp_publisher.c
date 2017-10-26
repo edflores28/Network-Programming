@@ -11,10 +11,13 @@
  *Course: EN.605.474.81
  *
  */
+#include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "tcpnitslib.h"
 #include "config.h"
@@ -30,27 +33,73 @@ void advertise() {
 
 	// Variables
 	struct sockaddr_in server, addr;
-	char buffer[L_tmpnam];
+	char buffer[256];
 	disc_advertise mesg;
-	int nbytes, fd;
+	int nbytes, fd, res;
 	int len = sizeof(struct sockaddr);
+	struct hostent *host;
+	char **ptr;
+	char str[256];
 
+	// Clear the buffer
+	memset(&buffer[0],0, sizeof(buffer));
+	
+	// Get the hostname of the publisher
+	res = gethostname(buffer, sizeof(buffer));
+
+	if (res < 0)
+	{
+		perror("Error obtaining hosname\n");
+		exit(1);
+	}
+
+	printf("%s %i, \n",buffer, res);
+
+	// Obtain hostent which contains all the info on
+	// the publisher.
+	host = gethostbyname(buffer);
+	
+	if (host == NULL)
+	{
+		perror("Error obtaining hostent");
+		exit(1);
+	}
+
+	ptr = host->h_addr_list;
+	for (; *ptr != NULL; ptr++)
+		printf("addr %s\n",inet_ntop(host->h_addrtype, *ptr, str,sizeof(str)));
+
+	
+	// Fill in the addr struct, this data is sent to the
+	// discovery service.
+	memcpy(&addr.sin_addr, host->h_addr_list[0], host->h_length);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(TCP_PORT);
+		
+	
 	// Fill in the message structure.
 	mesg.msg_type = ADVERTISE;
- 	mesg.pubaddr_size = sizeof(addr.sun_path);
+ 	mesg.pubaddr_size = sizeof(addr);
 	mesg.pub_address = addr;
 
 	// Create the client
 	fd = setup_discovery_server(UDP_PORT);
 
-	getsockname(fd, (struct sockaddr *)&addr, &len);
+	if (fd == NITS_SOCKET_ERROR)
+	{
+		perror("Error creating socket..\n");
+		exit(1);
+	}
 
-	printf("%s %i\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-	exit(0);
+	
+	server.sin_family = AF_INET;
+	server.sin_port = htons(UDP_PORT);
 
-	// Set the discovery service information.
-	server.sun_family = AF_LOCAL;
-	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+	if (inet_aton("128.220.101.247",&server.sin_addr)==0)
+	{
+		perror("inet_aton error..exit..\n");
+		exit(1);
+	}
 
 	// Send the message to the discovery service.
 	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
@@ -73,6 +122,8 @@ int main(int argc, char *argv[])
 	char article[ARRAY_SIZE];
 	FILE *file;
 	int found = -1;
+	struct sockaddr_in server, addr;
+	int len = sizeof(struct sockaddr);
 
 	advertise();
 	
@@ -86,7 +137,12 @@ int main(int argc, char *argv[])
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
 	}
+	
+	printf("%s %i\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+	exit(0);
 
+	getsockname(fd, (struct sockaddr *)&addr, &len);
+	
 	// Run the loop until terminated
 	while(1)
 	{

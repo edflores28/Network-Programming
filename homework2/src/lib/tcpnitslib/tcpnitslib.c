@@ -165,6 +165,7 @@ int setup_discovery_server(int port)
 {
 	int fd, result;
 	struct sockaddr_in disc_addr;
+	int val = 1;
 
 	// Obtain a file descriptor for the server.
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -172,6 +173,11 @@ int setup_discovery_server(int port)
 	if (fd == -1)
 	{
 		perror("Error creating socket");
+		return NITS_SOCKET_ERROR;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+		perror("setsockopt error");
 		return NITS_SOCKET_ERROR;
 	}
 
@@ -195,13 +201,13 @@ int setup_discovery_server(int port)
 	}
 
 	// Listem on the socket
-	result = listen(fd, 5);
+//	result = listen(fd, 5);
 
-	if (result == -1)
-	{
-		perror("Error listening");
-		return NITS_SOCKET_ERROR;
-	}
+//	if (result == -1)
+//	{
+//		perror("Error listening");
+//		return NITS_SOCKET_ERROR;
+//	}
 
 	printf ("Setting up tcp discovery service on %d\n", port);
 	return fd;
