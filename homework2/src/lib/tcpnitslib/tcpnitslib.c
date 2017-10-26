@@ -88,6 +88,7 @@ int setup_subscriber(struct in_addr *host, int port)
 int setup_publisher(int port)
 {
 	int result;
+	int val = 1;
 	struct sockaddr_in server_addr;
 
 	// Obtain a file descriptor for the server.
@@ -96,6 +97,11 @@ int setup_publisher(int port)
 	if (listen_fd == -1)
 	{
 		perror("Error creating socket");
+		return NITS_SOCKET_ERROR;
+	}
+
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+		perror("setsockopt error");
 		return NITS_SOCKET_ERROR;
 	}
 
