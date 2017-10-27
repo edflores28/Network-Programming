@@ -122,16 +122,17 @@ disc_pub_list request_list()
 int main(int argc, char *argv[])
 {
 	// Variables
-	int fd;
-	int bytes, i;
-	int found, user;
+	int fd, bytes, found, res;
+	int length = 0;
+	int user, i;
 	char buffer[ARRAY_SIZE];
 	int init_read = -1;
-	int length;
-	struct in_addr *host;
 	int list = -1;
+	char article[128];
 	FILE *file;
 	disc_pub_list pub_list;
+	fd_set timeout;
+	struct timeval time;
 
 	// Check to see if there are valid arguments.
 	if (argc < 2)
@@ -153,17 +154,22 @@ int main(int argc, char *argv[])
 	printf("Select a publisher (1 - %i): ", i);
 	scanf("%i", &user);
 
-	// Set the host to be localhost
-	host = (uint32_t) inet_addr("127.0.0.1");
+	if (user == 11)
+		exit(0);
 
-	// If the user entered an ip address use it as
-	// the host.
-	if (argc > 2)
-		host = (uint32_t) inet_addr(argv[2]);
+	// Decrement the user's input and see if the
+	// selection is within range. If the value is not
+	// within range, exit.
+	user--;
+	if ((user >= i )&& (user < 0))
+	{
+		printf("Invalid selection. exiting.");
+		exit(0);
+	}
 
 	// Obtain the socket file descriptor for the subscriber.
 	// Exit is there is an error
-	fd = setup_subscriber (host, TCP_PORT);
+	fd = setup_subscriber (pub_list.address[user].sin_addr, TCP_PORT);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{
@@ -171,42 +177,86 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// Determine if the user wants the list of articles.
-	list = strcmp("LIST", argv[1]);
+	// Set up the select system call to sleep
+	// for 100ms. This will help to not block
+	// on the read call when we need to exit.
+	time.tv_sec = 0;
+	time.tv_usec = 100000;
 
-	printf("Sending %s to the publisher\n", argv[1]);
+	FD_ZERO(&timeout);
+	FD_SET(fd, &timeout);
 
-	// Send the Article that the subscriber wants from the publisher
-	// First make sure we get the size of the file.
-	for (length = 0; length < 64; length++)
-		if (argv[1][length] == 0x00)
+	// Obtain the list of articles
+	printf("\nObtaining the list of articles from the publisher...\n\n");
+	bytes = write(fd,"LIST",4);
+
+	if (bytes < 0)
+	{
+		perror("Error writing\n");
+		close(fd);
+		exit(1);
+	}
+
+	// Obtain the LIST from the publisher. Assuming that the publisher will
+	// only send the buffer size of data.
+	bytes = read(fd,buffer,BUFFER_SIZE);
+
+	if (bytes < 0)
+	{
+		perror("Error reading\n");
+		close(fd);
+		exit(1);
+	}
+
+	// Ask the user's input on which publisher that they want to use.
+	printf("The following articles are available:\n");
+	printf("%s\n",buffer);
+
+	memset(&article, 0, sizeof(article));
+
+	printf("Enter the name of the article: ");
+	scanf("%s",article);
+	printf("\n");
+
+	// Obtain the length of the user's input.
+	for (i = 0; i < BUFFER_SIZE; i++)
+	{
+		if (article[i] == 0)
 			break;
 
-	bytes = write(fd,argv[1],length);
+			length++;
+	}
 
-	if (list == 0)
-		printf("\nThe following files are available to be requested:\n\n");
+	printf("Requesting %s\n",article);
+	bytes = write(fd, article, length);
+
+	if (bytes < 0)
+	{
+		perror("Error writing\n");
+		exit(1);
+	}
 
 	// Read from the socket until there is is no more
-	// data available from the subscriber. Also
-	// write to the file.
+	// data from the publisher. Once the timeout of
+	// 100ms is reached we will break from the loop.
 	while(1)
 	{
-		bytes = read(fd,buffer,ARRAY_SIZE);
+		res = select(fd+1, &timeout, NULL, NULL, &time);
 
-		// If there are no bytes read break from the while loop.
-		if (bytes == 0)
+		if (res == 0)
 			break;
+
+		bytes = read(fd,buffer,BUFFER_SIZE);
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
-		if ((init_read == -1) && (list != 0))
+		if (init_read == -1)
 		{
 			init_read = 0;
 
 			// Obtain a handle to write what we receive from the publisher.
 			// Exit is there is an error.
-			file = fopen(argv[1], "wb");
+			file = fopen(article, "wb");
 
 			if (file == NULL)
 			{
@@ -214,22 +264,29 @@ int main(int argc, char *argv[])
 				close(fd);
 				exit(1);
 			}
+
+			printf("Opened the file for writing.\n");
 		}
 
-		// If LIST was send print the buffer, otherwise write
-		// to the file.
-		if (list == 0)
-			printf("%s",buffer);
-		else
-			fputs(buffer, file);
+		// Write to the file.
+		fputs(buffer, file);
 
 		// Clear the buffer.
 		memset(&buffer, 0, sizeof(buffer));
 	}
 
+	printf("Finished writing to the file\n");
+
 	// Print out a message if there were no bytes reads.
-	if ((init_read == -1) && (list != 0))
+	if (init_read == -1)
 		printf("There was nothing recieved from the publisher\n");
+
+	printf("Enter QUIT\n");
+	printf("This will interrupt other clients as well: ");
+	scanf("%s",article);
+
+	// Send QUIT to kill the publisher.
+	bytes = write(fd, "QUIT", 4);
 
 	// Do some cleanup.
 	close(fd);
