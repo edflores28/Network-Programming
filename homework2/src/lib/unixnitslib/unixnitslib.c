@@ -162,6 +162,9 @@ int get_next_subscriber(void)
 	return sock_fd;
 }
 
+/*
+* Function that sets up the discovery service.
+*/
 int setup_discovery_server(char *server_socket)
 {
 	struct sockaddr_un disc_addr;

@@ -1,8 +1,8 @@
 /*
-*Project: Assignment 1
+*Project: Assignment 2
 *
 *Library: tcpnitslib
-*File Name: tcpnitslib.cpp
+*File Name: tcpnitslib.c
 *Purpose: provides utilities to set up TCP client
 *         and server sockets
 *
@@ -167,6 +167,9 @@ int get_next_subscriber(void)
 	return sock_fd;
 }
 
+/*
+* Function that sets up the discovery service.
+*/
 int setup_discovery_server(int port)
 {
 	int fd, result;

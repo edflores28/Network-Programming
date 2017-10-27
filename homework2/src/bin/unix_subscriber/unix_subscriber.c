@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "unixnitslib.h"
+#include "utillib.h"
 
 #define BUFFER_SIZE 1024
 
@@ -26,7 +27,7 @@
 * connect to the dicovery service which will request
 * the available publishers.
 */
-disc_pub_list request_list()
+disc_pub_list request_list(char *disc_addr)
 {
 	struct sockaddr_un server;
 	char tmp[L_tmpnam], buffer[BUFFER_SIZE];
@@ -47,7 +48,7 @@ disc_pub_list request_list()
 
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
-	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+	strncpy(server.sun_path, disc_addr, sizeof(server.sun_path) - 1);
 
 	// Send the message to the discovery service.
 	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
@@ -127,17 +128,16 @@ int main(int argc, char *argv[])
 	disc_pub_list pub_list;
 	fd_set timeout;
 	struct timeval time;
+	char *disc_addr;
 
-	// Check to see if there are valid arguments.
-	if (argc < 2)
-	{
-		fprintf (stderr, "Usage: %s <dest file>\n", argv[0]);
-		exit (1);
-	}
+	parse_arg(argc, argv, disc_addr);
 
+	if (disc_addr == NULL)
+		disc_addr = DEFAULT_UNIX_DISC;
+		
 	// Request the the available publishers from the
 	// discovery service.
-	pub_list = request_list();
+	pub_list = request_list(disc_addr);
 
 	printf("The following is a list of available publishers:\n");
 
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 	printf("Select a publisher (1 - %i): ", i);
 	scanf("%i", &user);
 
-	if (user == 11)
+	if (user == 6)
 		exit(0);
 
 	// Decrement the user's input and see if the

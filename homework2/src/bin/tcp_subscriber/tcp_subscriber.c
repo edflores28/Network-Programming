@@ -21,7 +21,7 @@
 #include "config.h"
 #include "utillib.h"
 
-#define ARRAY_SIZE 1024
+#define BUFFER_SIZE 1024
 
 /**
 *	This method creates a datagram socket that will
@@ -31,7 +31,7 @@
 disc_pub_list request_list(char *discover)
 {
 	struct sockaddr_in server;
-	char buffer[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
 	disc_get_pub_list mesg;
 	disc_pub_list list;
 	int nbytes, fd;
@@ -92,7 +92,7 @@ disc_pub_list request_list(char *discover)
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, ARRAY_SIZE, 0, (struct sockaddr*)&server, &size);
+	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server, &size);
 
 	if (nbytes < 0)
 	{
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	int fd, bytes, found, res;
 	int length = 0;
 	int user, i;
-	char buffer[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
 	int init_read = -1;
 	int list = -1;
 	char article[128];
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 	parse_arg(argc, argv, disc_addr);
 
 	if (disc_addr == NULL)
-		disc_addr = DEFAULT_TCP_DISC;	
+		disc_addr = DEFAULT_TCP_DISC;
 
 	// Request the the available publishers from the
 	// discovery service.
@@ -152,8 +152,8 @@ int main(int argc, char *argv[])
 	printf("Enter 6 to QUIT or -\n");
 	printf("Select a publisher (1 - %i): ", i);
 	scanf("%i", &user);
-	
-	if (user == 11)
+
+	if (user == 6)
 		exit(0);
 
 	// Decrement the user's input and see if the
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 	// Obtain the list of articles
 	printf("\nObtaining the list of articles from the publisher...\n\n");
 	bytes = write(fd,"LIST",4);
-	
+
 	if (bytes < 0)
 	{
 		perror("Error writing\n");
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
 	// Obtain the LIST from the publisher. Assuming that the publisher will
 	// only send the buffer size of data.
-	bytes = read(fd,buffer,ARRAY_SIZE);
+	bytes = read(fd,buffer,BUFFER_SIZE);
 
 	if (bytes < 0)
 	{
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 	printf("\n");
 
 	// Obtain the length of the user's input.
-	for (i = 0; i < ARRAY_SIZE; i++)
+	for (i = 0; i < BUFFER_SIZE; i++)
 	{
 		if (article[i] == 0)
 			break;
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 		if (res == 0)
 			break;
 
-		bytes = read(fd,buffer,ARRAY_SIZE);
+		bytes = read(fd,buffer,BUFFER_SIZE);
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.

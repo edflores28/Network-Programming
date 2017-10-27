@@ -24,7 +24,7 @@
 #include "config.h"
 #include "utillib.h"
 
-#define ARRAY_SIZE 1024
+#define BUFFER_SIZE 1024
 
 // Path's to look for the articles
 char myArticle[] = "/home/eflores4/Articles/";
@@ -58,8 +58,6 @@ void advertise(char * disc_addr) {
 		perror("Error obtaining hosname\n");
 		exit(1);
 	}
-
-	printf("%s %i, \n",buffer, res);
 
 	// Obtain hostent which contains all the info on
 	// the publisher.
@@ -100,7 +98,7 @@ void advertise(char * disc_addr) {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(UDP_PORT);
 
-	if (inet_aton(disc_addr,&server.sin_addr)==0)
+	if (inet_aton(disc_addr,&server.sin_addr) == 0)
 	{
 		perror("inet_aton error..exit..\n");
 		exit(1);
@@ -126,8 +124,8 @@ void child_process(int fd)
 {
 	// Variables
 	int bytes;
-	char buffer[ARRAY_SIZE];
-	char article[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
+	char article[BUFFER_SIZE];
 	FILE *file;
 	int found = -1;
 
@@ -135,7 +133,7 @@ void child_process(int fd)
 	{
 		// Clear the buffer and read which article the subscriber requested
 		memset(&buffer[0],0,sizeof(buffer));
-		bytes = read(fd, buffer, ARRAY_SIZE);
+		bytes = read(fd, buffer, BUFFER_SIZE);
 
 		if (bytes < 0)
 		{
@@ -191,14 +189,14 @@ void child_process(int fd)
 			// Transferring the requested article.
 			while(1)
 			{
-				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
+				bytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
 
 				// Break from the loop is no bytes are read.
 				if (bytes == 0)
 					break;
 
 				// Send to the subscriber
-				bytes = write(fd,buffer,ARRAY_SIZE);
+				bytes = write(fd,buffer,BUFFER_SIZE);
 
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));

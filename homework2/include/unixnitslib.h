@@ -23,9 +23,6 @@
 #define NITS_SOCKET_ERROR	(-1)
 #define NITS_SOCKET_OK		(0)
 
-#define PATH "/home/eflores4/serversocket"
-
-#define DISCOVERY_PATH	"/tmp/port.8404_d"
 /*
  * Discovery service handles this many publishers
 */

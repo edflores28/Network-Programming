@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[])
 {
-	int fd, recvlen;
+		int fd, recvlen;
   	char buffer[BUFFER_SIZE];
   	struct sockaddr_un client;
   	socklen_t size;

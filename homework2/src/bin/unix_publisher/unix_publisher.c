@@ -22,7 +22,7 @@
 #include "unixnitslib.h"
 #include "config.h"
 
-#define ARRAY_SIZE 1024
+#define BUFFER_SIZE 1024
 
 // Path's to look for the articles
 char myArticle[] = "/home/eflores4/Articles/";
@@ -33,7 +33,7 @@ char netArticle[] = "/home/net_class/474/Articles/";
 * connect to the dicovery service. The publisher will
 * send it's address to the publisher.
 */
-void advertise() {
+void advertise(char *disc_addr) {
 
 	// Variables
 	struct sockaddr_un server, addr;
@@ -55,7 +55,7 @@ void advertise() {
 
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
-	strncpy(server.sun_path, DISCOVERY_PATH, sizeof(server.sun_path) - 1);
+	strncpy(server.sun_path, disc_addr, sizeof(server.sun_path) - 1);
 
 	// Send the message to the discovery service.
 	nbytes = sendto(fd, &mesg, sizeof(mesg), 0, (struct sockaddr *)&server, sizeof(server));
@@ -77,8 +77,8 @@ void child_process(int fd)
 {
 	// Variables
 	int bytes;
-	char buffer[ARRAY_SIZE];
-	char article[ARRAY_SIZE];
+	char buffer[BUFFER_SIZE];
+	char article[BUFFER_SIZE];
 	FILE *file;
 	int found = -1;
 
@@ -86,7 +86,7 @@ void child_process(int fd)
 	{
 		// Clear the buffer and read which article the subscriber requested
 		memset(&buffer[0],0,sizeof(buffer));
-		bytes = read(fd, buffer, ARRAY_SIZE);
+		bytes = read(fd, buffer, BUFFER_SIZE);
 
 		if (bytes < 0)
 		{
@@ -142,14 +142,14 @@ void child_process(int fd)
 			// Transferring the requested article.
 			while(1)
 			{
-				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
+				bytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
 
 				// Break from the loop is no bytes are read.
 				if (bytes == 0)
 					break;
 
 				// Send to the subscriber
-				bytes = write(fd,buffer,ARRAY_SIZE);
+				bytes = write(fd,buffer,BUFFER_SIZE);
 
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));
@@ -172,9 +172,15 @@ int main(int argc, char *argv[])
 	// Variables
 	int fd;
 	pid_t pID;
+	char *disc_addr;
+
+	parse_arg(argc, argv, disc_addr);
+
+	if (disc_addr == NULL)
+		disc_addr = DEFAULT_UNIX_DISC;
 
 	// Advertise the server's address to the discovery service.
-	advertise();
+	advertise(disc_addr);
 
 	if (setup_publisher (UNIX_PATH) == NITS_SOCKET_ERROR)
 	{

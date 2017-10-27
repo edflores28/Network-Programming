@@ -1,5 +1,5 @@
 /*
-*Project: Assignment 1
+*Project: Assignment 2
 *
 *File Name: config.h
 *Purpose: Provides configuration for TCP, UDP
@@ -13,4 +13,4 @@
 #define UDP_PORT 8404
 #define UNIX_PATH "/tmp/floresserver"
 #define DEFAULT_TCP_DISC "128.220.101.247"
-#define DEFAULT_UNIX_DISC "/tmp/floresdisc"
+#define DEFAULT_UNIX_DISC "/tmp/port.8404_d"
