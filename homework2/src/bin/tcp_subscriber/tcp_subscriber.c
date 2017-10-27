@@ -133,13 +133,11 @@ int main(int argc, char *argv[])
 	disc_pub_list pub_list;
 	fd_set timeout;
 	struct timeval time;
-	char *disc_addr;
 
-	disc_addr = parse_arg(argc, argv);
-
-	if (disc_addr == NULL) {
-		printf("I AM NULL")
-		disc_addr = DEFAULT_TCP_DISC;
+	if (argc == 3)
+	{
+		if ((argv[1][0] == '-') && (argv[1][1] == 'd'))
+			printf("%s",argv[2]);
 	}
 
 	// Request the the available publishers from the
