@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "unixnitslib.h"
+#include "config.h"
 
 #define BUFFER_SIZE 1024
 
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
 		client.sun_family = AF_LOCAL;
 		size = sizeof(client);
 
-  	fd = setup_discovery_server(DISCOVERY_PATH);
+  	fd = setup_discovery_server(DEFAULT_UNIX_DISC);
 
   	if (fd == NITS_SOCKET_ERROR)
   	{
