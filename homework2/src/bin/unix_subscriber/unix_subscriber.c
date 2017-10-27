@@ -44,8 +44,7 @@ disc_pub_list request_list(char *disc_addr)
 	mesg.msg_type = GET_PUB_LIST;
 
 	// Create the client.
-	tmpnam(tmp);
-	fd = setup_discovery_server(tmp);
+	fd = setup_discovery_server("/tmp/fldgrsub");
 
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;

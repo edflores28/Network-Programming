@@ -40,7 +40,7 @@ void advertise(char *disc_addr) {
 	char buffer[L_tmpnam];
 	disc_advertise mesg;
 	int nbytes, fd;
-
+	
 	// Copy the publisher path to the server_addr path and set
 	strncpy(addr.sun_path, UNIX_PATH, sizeof(addr.sun_path) - 1);
 
@@ -49,9 +49,8 @@ void advertise(char *disc_addr) {
  	mesg.pubaddr_size = sizeof(addr.sun_path);
 	mesg.pub_address = addr;
 
-	// Create the client.
-	tmpnam(buffer);
-	fd = setup_discovery_server(buffer);
+	// Create the client
+	fd = setup_discovery_server("/tmp/fldgrpub");
 
 	// Set the discovery service information.
 	server.sun_family = AF_LOCAL;
