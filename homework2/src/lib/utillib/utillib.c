@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include "utillib.h"
 
-void parse_arg(int argc, char *argv[], char* disc_addr,)
+void parse_arg(int argc, char *argv[], char* disc_addr)
 {
 	/* The valid switches that this looks for is -d */
 	int idx = argc - 1;
-  int i;
+  	int i;
 
 	disc_addr = NULL;
 
@@ -13,15 +13,17 @@ void parse_arg(int argc, char *argv[], char* disc_addr,)
 	{
 		printf("Invalid or no arguments.\n");
 		printf("The following are valid switches:\n");
-		printf("-d 1\t\tAddress of discovery server\n");
+		printf("-d 1\t\tAddress of discovery server\n\n");
+		printf("Using default discovery addres..\n");
 		return;
 	}
 
-	for (int i = 1; i < idx; i+=2)
+	for (i = 1; i < idx; i+=2)
 	{
 		char *temp = argv[i];
 		if ((temp[0] == '-') && (temp[1] == 'd'))
 		{
 				disc_addr = argv[i+1];
 		}
+	}
 }
