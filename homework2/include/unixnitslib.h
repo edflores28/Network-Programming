@@ -20,6 +20,8 @@
 *Course: EN.605.474.81
 *
 */
+#include <sys/un.h>
+
 #define NITS_SOCKET_ERROR	(-1)
 #define NITS_SOCKET_OK		(0)
 
