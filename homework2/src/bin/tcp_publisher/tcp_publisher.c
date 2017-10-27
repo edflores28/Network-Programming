@@ -85,7 +85,7 @@ void advertise(char * disc_addr) {
 	mesg.pub_address = addr;
 
 	// Create the client
-	fd = setup_discovery_server(UDP_PORT);
+	fd = setup_discovery_server(0);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{

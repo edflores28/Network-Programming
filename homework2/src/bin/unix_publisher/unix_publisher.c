@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 			advertise(argv[2]);
 	}
 	else
-		advertise(DEFAULT_TCP_DISC);
+		advertise(DEFAULT_UNIX_DISC);
 
 	if (setup_publisher (UNIX_PATH) == NITS_SOCKET_ERROR)
 	{

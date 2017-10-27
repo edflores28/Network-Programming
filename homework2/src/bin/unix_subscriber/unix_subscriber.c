@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
 			pub_list = request_list(argv[2]);
 	}
 	else
-		pub_list = request_list(DEFAULT_TCP_DISC);
-	
+		pub_list = request_list(DEFAULT_UNIX_DISC);
+
 	// Request the the available publishers from the
 	// discovery service.
 	pub_list = request_list(disc_addr);
