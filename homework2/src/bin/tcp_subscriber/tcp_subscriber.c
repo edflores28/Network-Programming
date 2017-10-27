@@ -27,7 +27,7 @@
 * connect to the dicovery service which will request
 * the available publishers.
 */
-disc_pub_list request_list()
+disc_pub_list request_list(char *discover)
 {
 	struct sockaddr_in server;
 	char buffer[ARRAY_SIZE];
@@ -49,7 +49,7 @@ disc_pub_list request_list()
 	server.sin_family = AF_INET;
 	server.sin_port = htons(UDP_PORT);
 
-	if (inet_aton("128.220.101.247",&server.sin_addr)==0)
+	if (inet_aton(discover,&server.sin_addr)==0)
 	{
 		perror("inet_aton error..exit..\n");
 		exit(1);
@@ -98,7 +98,6 @@ disc_pub_list request_list()
 		perror("Error reading\n");
 	}
 
-	printf("bytes: %i\n", nbytes, sizeof(disc_pub_list));
 	if (nbytes == sizeof(disc_pub_list))
 	{
 		printf("Publisher list received from discovery service\n");
@@ -143,17 +142,17 @@ int main(int argc, char *argv[])
 
 	// Request the the available publishers from the
 	// discovery service.
-	pub_list = request_list();
+	pub_list = request_list("dev4addr");
 
 	printf("The following is a list of available publishers:\n");
 
 	for (i = 0; i < pub_list.num_publishers; i++)
-		printf("%i:\t%s\n", i+1, pub_list.address[i].sin_addr);
+		printf("%i:\t%s\n", i+1, inet_ntoa(pub_list.address[i].sin_addr));
 
 	printf("Enter 6 to QUIT or -\n");
 	printf("Select a publisher (1 - %i): ", i);
 	scanf("%i", &user);
-
+	
 	if (user == 11)
 		exit(0);
 
@@ -169,7 +168,7 @@ int main(int argc, char *argv[])
 
 	// Obtain the socket file descriptor for the subscriber.
 	// Exit is there is an error
-	fd = setup_subscriber (pub_list.address[user].sin_addr, TCP_PORT);
+	fd = setup_subscriber (&pub_list.address[user].sin_addr, TCP_PORT);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
 	// Obtain the list of articles
 	printf("\nObtaining the list of articles from the publisher...\n\n");
 	bytes = write(fd,"LIST",4);
-
+	
 	if (bytes < 0)
 	{
 		perror("Error writing\n");
@@ -199,7 +198,7 @@ int main(int argc, char *argv[])
 
 	// Obtain the LIST from the publisher. Assuming that the publisher will
 	// only send the buffer size of data.
-	bytes = read(fd,buffer,BUFFER_SIZE);
+	bytes = read(fd,buffer,ARRAY_SIZE);
 
 	if (bytes < 0)
 	{
@@ -219,7 +218,7 @@ int main(int argc, char *argv[])
 	printf("\n");
 
 	// Obtain the length of the user's input.
-	for (i = 0; i < BUFFER_SIZE; i++)
+	for (i = 0; i < ARRAY_SIZE; i++)
 	{
 		if (article[i] == 0)
 			break;
@@ -246,7 +245,7 @@ int main(int argc, char *argv[])
 		if (res == 0)
 			break;
 
-		bytes = read(fd,buffer,BUFFER_SIZE);
+		bytes = read(fd,buffer,ARRAY_SIZE);
 
 		// At this point bytes are read and if it is the initial
 		// loop open the file to write.
