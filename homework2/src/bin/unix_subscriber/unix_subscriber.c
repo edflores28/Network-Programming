@@ -139,10 +139,6 @@ int main(int argc, char *argv[])
 	else
 		pub_list = request_list(DEFAULT_TCP_DISC);
 	
-	// Request the the available publishers from the
-	// discovery service.
-	pub_list = request_list(disc_addr);
-
 	printf("The following is a list of available publishers:\n");
 
 	for (i = 0; i < pub_list.num_publishers; i++)

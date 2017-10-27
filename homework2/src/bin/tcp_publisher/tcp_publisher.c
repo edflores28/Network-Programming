@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "tcpnitslib.h"
+#include "config.h"
 
 #define BUFFER_SIZE 1024
 
