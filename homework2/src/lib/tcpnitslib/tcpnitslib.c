@@ -56,7 +56,7 @@ int setup_subscriber(struct in_addr *host, int port)
 	// Set the TCP configuration
 	client_addr.sin_family = AF_INET;
 	client_addr.sin_port = htons(port);
-	client_addr.sin_addr.s_addr = (uint32_t)host;
+	client_addr.sin_addr = *host;
 
 	// Loop 6 times until a connection can be established. There
 	// will be a 1 second delay after a failure is determined.
