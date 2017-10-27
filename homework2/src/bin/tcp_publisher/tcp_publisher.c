@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 #include "config.h"
+#include "utillib.h"
 
 #define ARRAY_SIZE 1024
 
@@ -34,7 +35,7 @@ char netArticle[] = "/home/net_class/474/Articles/";
 * connect to the dicovery service. The publisher will
 * send it's address to the publisher.
 */
-void advertise() {
+void advertise(char * disc_addr) {
 
 	// Variables
 	struct sockaddr_in server, addr;
@@ -99,7 +100,7 @@ void advertise() {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(UDP_PORT);
 
-	if (inet_aton("128.220.101.247",&server.sin_addr)==0)
+	if (inet_aton(disc_addr,&server.sin_addr)==0)
 	{
 		perror("inet_aton error..exit..\n");
 		exit(1);
@@ -223,8 +224,14 @@ int main(int argc, char *argv[])
 	// Variables
 	int fd;
 	pid_t pID;
+	char * disc_addr;
 
-	advertise();
+	parse_arg(argc, argv, disc_addr);
+
+	if (disc_addr == NULL)
+		disc_addr = DEFAULT_TCP_DISC;
+
+	advertise(disc_addr);
 
 	// Obtain the socket, exit if there is an error.
 	if ((fd = setup_publisher (TCP_PORT)) == NITS_SOCKET_ERROR)
