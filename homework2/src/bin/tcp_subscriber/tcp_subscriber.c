@@ -135,10 +135,12 @@ int main(int argc, char *argv[])
 	struct timeval time;
 	char *disc_addr;
 
-	parse_arg(argc, argv, disc_addr);
+	disc_addr = parse_arg(argc, argv);
 
-	if (disc_addr == NULL)
+	if (disc_addr == NULL) {
+		printf("I AM NULL")
 		disc_addr = DEFAULT_TCP_DISC;
+	}
 
 	// Request the the available publishers from the
 	// discovery service.

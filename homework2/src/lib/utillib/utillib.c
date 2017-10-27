@@ -16,13 +16,11 @@
 #include <stdio.h>
 #include "utillib.h"
 
-void parse_arg(int argc, char *argv[], char* disc_addr)
+char * parse_arg(int argc, char *argv[])
 {
 	/* The valid switches that this looks for is -d */
 	int idx = argc - 1;
   	int i;
-
-	disc_addr = NULL;
 
 	if ((idx % 2 != 0) || idx == 0)
 	{
@@ -38,7 +36,7 @@ void parse_arg(int argc, char *argv[], char* disc_addr)
 		char *temp = argv[i];
 		if ((temp[0] == '-') && (temp[1] == 'd'))
 		{
-				disc_addr = argv[i+1];
+				return argv[i+1];
 		}
 	}
 }

@@ -13,4 +13,4 @@
 *Course: EN.605.474.81
 *
 */
-void parse_arg(int argc, char *argv[], char* disc_addr);
+char * parse_arg(int argc, char *argv[]);
