@@ -196,11 +196,6 @@ int setup_discovery_server(int port)
 	// Set the family and the port number.
 	disc_addr.sin_family = AF_INET;
 	disc_addr.sin_port = htons(port);
-	if (inet_aton("128.220.101.247",&disc_addr.sin_addr)==0)
-	{
-		perror("inet_aton error..exit..\n");
-		exit(1);
-	}
 
 	// Bind to the socket
 	result = bind(fd, (struct sockaddr*)&disc_addr, sizeof(disc_addr));
@@ -211,15 +206,6 @@ int setup_discovery_server(int port)
 		return NITS_SOCKET_ERROR;
 	}
 
-	// Listem on the socket
-//	result = listen(fd, 5);
-
-//	if (result == -1)
-//	{
-//		perror("Error listening");
-//		return NITS_SOCKET_ERROR;
-//	}
-
-	printf ("Setting up tcp discovery service on %d\n", port);
+	printf ("Setting up tcp discovery service on %d\n", ntohl(disc_addr.sin_port));
 	return fd;
 }
