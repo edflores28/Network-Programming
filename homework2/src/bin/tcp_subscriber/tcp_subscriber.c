@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "tcpnitslib.h"
 #include "config.h"
@@ -28,7 +30,7 @@
 disc_pub_list request_list()
 {
 	struct sockaddr_in server;
-	char buffer[BUFFER_SIZE];
+	char buffer[ARRAY_SIZE];
 	disc_get_pub_list mesg;
 	disc_pub_list list;
 	int nbytes, fd;
@@ -41,10 +43,10 @@ disc_pub_list request_list()
 	mesg.msg_type = GET_PUB_LIST;
 
 	// Create the client.
-	fd = setup_discovery_server(UDP_PORT);
+	fd = setup_discovery_server(0);
 
 	// Set the discovery service information.
-	server.sun_family = AF_INET;
+	server.sin_family = AF_INET;
 	server.sin_port = htons(UDP_PORT);
 
 	if (inet_aton("128.220.101.247",&server.sin_addr)==0)
@@ -89,7 +91,7 @@ disc_pub_list request_list()
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server, &size);
+	nbytes = recvfrom(fd, buffer, ARRAY_SIZE, 0, (struct sockaddr*)&server, &size);
 
 	if (nbytes < 0)
 	{
@@ -114,8 +116,6 @@ disc_pub_list request_list()
 	return list;
 }
 
-}
-
 /**
 *	The main program.
 */
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 {
 	// Variables
 	int fd;
-	int bytes;
+	int bytes, i;
 	int found, user;
 	char buffer[ARRAY_SIZE];
 	int init_read = -1;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 	printf("The following is a list of available publishers:\n");
 
 	for (i = 0; i < pub_list.num_publishers; i++)
-		printf("%i:\t%s\n", i+1, pub_list.address[i].sun_path);
+		printf("%i:\t%s\n", i+1, pub_list.address[i].sin_addr);
 
 	printf("Enter 6 to QUIT or -\n");
 	printf("Select a publisher (1 - %i): ", i);
