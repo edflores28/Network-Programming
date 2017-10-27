@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
