@@ -28,7 +28,7 @@ void parse_arg(int argc, char *argv[], char* disc_addr)
 	{
 		printf("Invalid or no arguments.\n");
 		printf("The following are valid switches:\n");
-		printf("-d 1\t\tAddress of discovery server\n\n");
+		printf("-d \t\tAddress of discovery server\n\n");
 		printf("Using default discovery addres..\n");
 		return;
 	}

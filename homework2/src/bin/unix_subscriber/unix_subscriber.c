@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include "unixnitslib.h"
 #include "utillib.h"
+#include "config.h"
 
 #define BUFFER_SIZE 1024
 
