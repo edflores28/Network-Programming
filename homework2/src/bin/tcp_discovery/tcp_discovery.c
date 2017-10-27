@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
 #include "tcpnitslib.h"
 #include "config.h"
@@ -21,9 +22,9 @@
 
 int main(int argc, char *argv[])
 {
-	  int fd, recvlen;
+	int fd, recvlen;
   	char buffer[BUFFER_SIZE];
-  	struct sockaddr_un client;
+  	struct sockaddr_in client;
   	socklen_t size;
   	int nbytes;
   	disc_get_pub_list sub_mesg;
@@ -31,8 +32,7 @@ int main(int argc, char *argv[])
   	disc_pub_list disc_mesg;
   	struct sockaddr_in pub_addrs[NUM_PUBLISHERS];
   	int total_pubs = 0;
-
-	client.sun_family = AF_INET;
+	
 	size = sizeof(client);
 
   	fd = setup_discovery_server(UDP_PORT);
@@ -50,9 +50,7 @@ int main(int argc, char *argv[])
 
     		// Read available data
     		nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&client, &size);
-
-		printf("GOT THIS: %i\n", nbytes);
-
+		
     		// Process messages send from the publisher
     		if (nbytes == sizeof(pub_mesg))
     		{
@@ -85,18 +83,19 @@ int main(int argc, char *argv[])
         		// if it was requested.
         		if (pub_mesg.msg_type == GET_PUB_LIST)
         		{
+		
 				printf("Received GET_PUB_LIST\n");
 
          			disc_mesg.msg_type = PUB_LIST;
           			disc_mesg.num_publishers = total_pubs;
 
 	  			memcpy(&disc_mesg.address[0], &pub_addrs, sizeof(disc_mesg.address));
-
-				printf("Sending PUB_LIST\n");
-         			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, (struct sockaddr*)&client, sizeof(client));
-
+				
+				printf("Sending PUB_LIST %s\n");
+	       			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, (struct sockaddr*)&client, size);
+				
 				if (nbytes < 0)
-          				perror("error");
+          				perror("Error Sending\n");
 
 				// Clear the message
          			memset(&sub_mesg, 0, sizeof(sub_mesg));
