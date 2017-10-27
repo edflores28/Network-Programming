@@ -40,7 +40,7 @@ void advertise(char *disc_addr) {
 	char buffer[L_tmpnam];
 	disc_advertise mesg;
 	int nbytes, fd;
-	
+
 	// Copy the publisher path to the server_addr path and set
 	strncpy(addr.sun_path, UNIX_PATH, sizeof(addr.sun_path) - 1);
 
@@ -173,13 +173,16 @@ int main(int argc, char *argv[])
 	pid_t pID;
 	char *disc_addr;
 
-	parse_arg(argc, argv, disc_addr);
-
-	if (disc_addr == NULL)
-		disc_addr = DEFAULT_UNIX_DISC;
-
-	// Advertise the server's address to the discovery service.
-	advertise(disc_addr);
+	// Request the the available publishers from the
+	// discovery service. If the user specified the address
+	// we will use it, otherwise we will use the default.
+	if (argc == 3)
+	{
+		if ((argv[1][0] == '-') && (argv[1][1] == 'd'))
+			advertise(argv[2]);
+	}
+	else
+		advertise(DEFAULT_TCP_DISC);
 
 	if (setup_publisher (UNIX_PATH) == NITS_SOCKET_ERROR)
 	{

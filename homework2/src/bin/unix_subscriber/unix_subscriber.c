@@ -18,7 +18,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "unixnitslib.h"
-#include "utillib.h"
 #include "config.h"
 
 #define BUFFER_SIZE 1024
@@ -128,13 +127,18 @@ int main(int argc, char *argv[])
 	disc_pub_list pub_list;
 	fd_set timeout;
 	struct timeval time;
-	char *disc_addr;
 
-	parse_arg(argc, argv, disc_addr);
-
-	if (disc_addr == NULL)
-		disc_addr = DEFAULT_UNIX_DISC;
-		
+	// Request the the available publishers from the
+	// discovery service. If the user specified the address
+	// we will use it, otherwise we will use the default.
+	if (argc == 3)
+	{
+		if ((argv[1][0] == '-') && (argv[1][1] == 'd'))
+			pub_list = request_list(argv[2]);
+	}
+	else
+		pub_list = request_list(DEFAULT_TCP_DISC);
+	
 	// Request the the available publishers from the
 	// discovery service.
 	pub_list = request_list(disc_addr);

@@ -21,8 +21,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "tcpnitslib.h"
-#include "config.h"
-#include "utillib.h"
 
 #define BUFFER_SIZE 1024
 
@@ -222,16 +220,17 @@ int main(int argc, char *argv[])
 	// Variables
 	int fd;
 	pid_t pID;
-	char *disc_addr;
 
-	disc_addr = parse_arg(argc, argv);
-
-	if (disc_addr == NULL) {
-		printf("I AM NULL")
-		disc_addr = DEFAULT_TCP_DISC;
+	// Request the the available publishers from the
+	// discovery service. If the user specified the address
+	// we will use it, otherwise we will use the default.
+	if (argc == 3)
+	{
+		if ((argv[1][0] == '-') && (argv[1][1] == 'd'))
+			advertise(argv[2]);
 	}
-
-	advertise(disc_addr);
+	else
+		advertise(DEFAULT_TCP_DISC);
 
 	// Obtain the socket, exit if there is an error.
 	if ((fd = setup_publisher (TCP_PORT)) == NITS_SOCKET_ERROR)

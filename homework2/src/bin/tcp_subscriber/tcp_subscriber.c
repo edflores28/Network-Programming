@@ -19,7 +19,6 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 #include "config.h"
-#include "utillib.h"
 
 #define BUFFER_SIZE 1024
 
@@ -134,10 +133,13 @@ int main(int argc, char *argv[])
 	fd_set timeout;
 	struct timeval time;
 
+	// Request the the available publishers from the
+	// discovery service. If the user specified the address
+	// we will use it, otherwise we will use the default.
 	if (argc == 3)
 	{
 		if ((argv[1][0] == '-') && (argv[1][1] == 'd'))
-			pub_list = request_list(argv[2]);	
+			pub_list = request_list(argv[2]);
 	}
 	else
 		pub_list = request_list(DEFAULT_TCP_DISC);
