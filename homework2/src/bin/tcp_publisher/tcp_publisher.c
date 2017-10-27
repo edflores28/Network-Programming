@@ -24,6 +24,10 @@
 
 #define ARRAY_SIZE 1024
 
+// Path's to look for the articles
+char myArticle[] = "/home/eflores4/Articles/";
+char netArticle[] = "/home/net_class/474/Articles/";
+
 /**
 * This method creates a datagram socket that will
 * connect to the dicovery service. The publisher will
@@ -43,7 +47,7 @@ void advertise() {
 
 	// Clear the buffer
 	memset(&buffer[0],0, sizeof(buffer));
-	
+
 	// Get the hostname of the publisher
 	res = gethostname(buffer, sizeof(buffer));
 
@@ -58,7 +62,7 @@ void advertise() {
 	// Obtain hostent which contains all the info on
 	// the publisher.
 	host = gethostbyname(buffer);
-	
+
 	if (host == NULL)
 	{
 		perror("Error obtaining hostent");
@@ -69,14 +73,14 @@ void advertise() {
 	for (; *ptr != NULL; ptr++)
 		printf("addr %s\n",inet_ntop(host->h_addrtype, *ptr, str,sizeof(str)));
 
-	
+
 	// Fill in the addr struct, this data is sent to the
 	// discovery service.
 	memcpy(&addr.sin_addr, host->h_addr_list[0], host->h_length);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(TCP_PORT);
-		
-	
+
+
 	// Fill in the message structure.
 	mesg.msg_type = ADVERTISE;
  	mesg.pubaddr_size = sizeof(addr);
@@ -91,7 +95,6 @@ void advertise() {
 		exit(1);
 	}
 
-	
 	server.sin_family = AF_INET;
 	server.sin_port = htons(UDP_PORT);
 
@@ -113,23 +116,114 @@ void advertise() {
 	close(fd);
 }
 
-int main(int argc, char *argv[])
+/**
+* This method is the method that the child process will execute.
+* This handles the communication to the subscriber.
+*/
+void child_process(int fd)
 {
 	// Variables
-	int fd;
 	int bytes;
 	char buffer[ARRAY_SIZE];
 	char article[ARRAY_SIZE];
 	FILE *file;
 	int found = -1;
-	struct sockaddr_in server, addr;
-	int len = sizeof(struct sockaddr);
+
+	while(1)
+	{
+		// Clear the buffer and read which article the subscriber requested
+		memset(&buffer[0],0,sizeof(buffer));
+		bytes = read(fd, buffer, ARRAY_SIZE);
+
+		if (bytes < 0)
+		{
+			printf("Error Reading.. exiting..\n");
+			exit(1);
+		}
+
+		printf("Recieved %s from the subscriber\n", buffer);
+
+		// Check to see if QUIT was received, If so
+		// close the socket and send the term signal
+		// to the parent process.
+		if (strcmp("QUIT", buffer) == 0)
+		{
+			printf("QUIT received, exiting..\n");
+			close(fd);
+			kill(getppid(), SIGKILL);
+			exit(1);
+		}
+
+		// Clear the article buffer and determine
+		// if the article is found in "my" path, this
+		// checks to see if the file exists and is readable.
+		memset(&article[0], 0, sizeof(article));
+		strcpy(article, myArticle);
+		strncat(article, buffer, bytes);
+
+		found = access(article,F_OK|R_OK);
+
+		// Check to see if the article was found. If not
+		// clear the article buffer and determine
+		// if the article is found in "net_class" path.
+		if (found == -1)
+		{
+			memset(&article[0], 0, sizeof(article));
+			strcpy(article, netArticle);
+			strncat(article, buffer, bytes);
+			found = access(article,F_OK|R_OK);
+		}
+
+		// If the article is found send it to the subscriber.
+		if (found == 0)
+		{
+			// Obtain a handle to the file.
+			file = fopen(article,"rb");
+
+			if (file == NULL)
+			{
+				perror("Error Opening File");
+				exit(1);
+			}
+
+			// Transferring the requested article.
+			while(1)
+			{
+				bytes = fread(buffer, sizeof(char), ARRAY_SIZE, file);
+
+				// Break from the loop is no bytes are read.
+				if (bytes == 0)
+					break;
+
+				// Send to the subscriber
+				bytes = write(fd,buffer,ARRAY_SIZE);
+
+				// Clear the buffer.
+				memset(&buffer, 0, sizeof(buffer));
+			}
+
+			printf("Finished sending to the subscriber\n");
+			fclose(file);
+		}
+
+		// Print a message if the article was not found.
+		if (found != 0)
+		{
+			printf("File path: %s not found..\n",buffer);
+		}
+	}
+}
+
+/**
+* Main Program.
+*/
+int main(int argc, char *argv[])
+{
+	// Variables
+	int fd;
+	pid_t pID;
 
 	advertise();
-	
-	// Path's to look for the articles
-	char myArticle[] = "/home/eflores4/Articles/";
-	char netArticle[] = "/home/net_class/474/Articles/";
 
 	// Obtain the socket, exit if there is an error.
 	if ((fd = setup_publisher (TCP_PORT)) == NITS_SOCKET_ERROR)
@@ -137,12 +231,7 @@ int main(int argc, char *argv[])
 		fprintf (stderr, "Error setting up the publisher.\n");
 		exit(1);
 	}
-	
-	printf("%s %i\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-	exit(0);
 
-	getsockname(fd, (struct sockaddr *)&addr, &len);
-	
 	// Run the loop until terminated
 	while(1)
 	{
@@ -156,91 +245,22 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 
-			// Clear the buffer and read which article the subscriber requested
-			memset(&buffer[0],0,sizeof(buffer));
-			bytes = read(fd, buffer, ARRAY_SIZE-1);
+			// Create a child process
+			pID = fork();
 
-			if (bytes < 0)
-			{
-				printf("Error Reading.. exiting..\n");
+			// Exit if there is an error.
+			if (pID < 0){
+				perror("Failed to fork!\n");
 				exit(1);
 			}
 
-			printf("Recieved %s from the subscriber\n", buffer);
-
-			// Check to see if QUIT was received,
-			// If so break from the while loop
-			if (strcmp(buffer, "QUIT") == 0)
-			{
-				printf("QUIT received, exiting..\n");
-				close(fd);
-				exit(0);
+			// Have the child process do it's work.
+			if (pID == 0){
+				child_process(fd);
 			}
 
-			// Clear the article buffer and determine
-			// if the article is found in "my" path, this
-			// checks to see if the file exists and is readable.
-			memset(&article[0], 0, sizeof(article));
-			strcpy(article, myArticle);
-			strncat(article, buffer, bytes);
-
-			found = access(article,F_OK|R_OK);
-
-			// Check to see if the article was found. If not
-			// clear the article buffer and determine
-			// if the article is found in "net_class" path.
-			if (found == -1)
-			{
-				memset(&article[0], 0, sizeof(article));
-				strcpy(article, netArticle);
-				strncat(article, buffer, bytes);
-				found = access(article,F_OK|R_OK);
-			}
-
-			// If the article is found send it to the subscriber.
-			if (found == 0)
-			{
-				// Obtain a handle to the file.
-				file = fopen(article,"rb");
-
-				if (file == NULL)
-				{
-					perror("Error Opening File");
-					exit(1);
-				}
-
-				// Transferring the requested article.
-				while(1)
-				{
-					bytes = fread(buffer, 1, ARRAY_SIZE, file);
-
-					// Break from the loop is no bytes are read.
-					if (bytes == 0)
-						break;
-
-					// Send to the subscriber
-					write(fd,buffer,ARRAY_SIZE);
-
-					// Clear the buffer.
-					memset(&buffer, 0, sizeof(buffer));
-				}
-
-				printf("Finished sending to the subscriber\n");
-				close(fd);
-				fclose(file);
-			}
-
-			// Close the file descriptor if the article is
-			// not found in both paths.
-			if (found != 0)
-			{
-				printf("File path: %s not found..\n",buffer);
-				close(fd);
-			}
+			// Parent has no need for the file desciptor
+			close(fd);
 	}
-
-	// Do some cleanup.
-	close(fd);
-	fclose(file);
 	exit (0);
 }
