@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include "tcpnitslib.h"
 #include "config.h"
+#include "utillib.h"
 
 #define ARRAY_SIZE 1024
 
@@ -132,17 +133,16 @@ int main(int argc, char *argv[])
 	disc_pub_list pub_list;
 	fd_set timeout;
 	struct timeval time;
+	char *disc_addr;
 
-	// Check to see if there are valid arguments.
-	if (argc < 2)
-	{
-		fprintf (stderr, "Usage: %s <article> [opt IP addr]\n", argv[0]);
-		exit (1);
-	}
+	parse_arg(argc, argv, disc_addr);
+
+	if (disc_addr == NULL)
+		disc_addr = DEFAULT_TCP_DISC;	
 
 	// Request the the available publishers from the
 	// discovery service.
-	pub_list = request_list("dev4addr");
+	pub_list = request_list(disc_addr);
 
 	printf("The following is a list of available publishers:\n");
 
