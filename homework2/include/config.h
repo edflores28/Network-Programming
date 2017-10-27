@@ -11,4 +11,6 @@
 */
 #define TCP_PORT 8404
 #define UDP_PORT 8404
-#define UNIX_PATH "/tmp/flores"
+#define UNIX_PATH "/tmp/floresserver"
+#define DEFAULT_TCP_DISC "128.220.101.247"
+#define DEFAULT_UNIX_DISC "/tmp/floresdisc"
