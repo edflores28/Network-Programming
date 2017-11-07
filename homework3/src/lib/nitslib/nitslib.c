@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <strings.h>
+#include <string.h>
 #include <netdb.h>
 #include "nitslib.h"
 
@@ -17,7 +17,32 @@ int setup_subscriber(char *host, char *port)
 
 int setup_publisher(char *host, char *port)
 {
+	// Variables
+	struct addrinfo hints, *res, *ptr;
+	int status;
+
+	memset(&hints, 0, sizeof (hints));
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	status = getaddrinfo(host, port, &hints, &res);
+	printf("status: %i %s\n", status, strerror(status));
+
+	//if (status < 0)
+	//{
+	//	perror("getaddrinfo error\n");
+	//	return NITS_SOCKET_ERROR;
+	//}
+
+	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	{
+		printf("protocol %i\n", ptr->ai_family);
+	}
 	printf ("Calling setup_publisher %s %s\n", host, port);
+
+	freeaddrinfo(res);
 	return (NITS_SOCKET_OK);
 }
 
