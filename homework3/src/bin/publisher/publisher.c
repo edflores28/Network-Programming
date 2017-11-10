@@ -22,11 +22,17 @@ main(int argc, char *argv[])
 	char discovery[MAXLEN];
 	char *phost, *pport;
 	char *dhost, *dport;
-
-	if ((setup_publisher (phost, pport)) == NITS_SOCKET_ERROR)
+	int fd;
+	if ((setup_publisher ("/unix", "/tmp/hello")) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Cannot set up publisher.\n");
 		exit(1);
 	}
+
+	fd = get_next_subscriber();
+
+	if (fd == NITS_SOCKET_ERROR)
+		exit(1);
+	printf("success");
 	exit (0);
 }
