@@ -44,7 +44,6 @@ int server_setup(char *host, char *port, int sock_type)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		printf("protocol: %i ai_family: %i name: %s\n", ptr-> ai_protocol, ptr->ai_family, ptr->ai_canonname);
 		if (ptr->ai_family == get_family(host))
 		{
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -73,16 +72,16 @@ int server_setup(char *host, char *port, int sock_type)
 	return fd;
 }
 
-int setup_subscriber(char *host, char *port)
+int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen, struct sockaddr **addr)
 {
-	// Variables
 	struct addrinfo hints, *res, *ptr;
-	int status, result, sub_fd, i;
+	struct sockaddr addr_cpy;
+	int fd = -1, status, val = 1;
 
 	memset(&hints, 0, sizeof (hints));
 
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_socktype = sock_type;
 
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
@@ -93,39 +92,57 @@ int setup_subscriber(char *host, char *port)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		printf("protocol: %i ai_family: %i name: %s\n", ptr-> ai_protocol, ptr->ai_family, ptr->ai_canonname);
 		if (ptr->ai_family == get_family(host))
 		{
-			sub_fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-
-			if (sub_fd == -1)
-			{
-				perror("socket error\n");
-				return NITS_SOCKET_ERROR;
-			}
-
-			for (i = 0; i < 6; i++)
-			{
-				result = connect(sub_fd, ptr->ai_addr, ptr->ai_addrlen);
-				if (result == 0)
-					break;
-				else
-				{
-					perror("connect error.");
-					sleep(1);
-				}
-			}
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 			break;
 		}
 	}
 
-		// If the counter is set to 6 return an error.
-		if (i == 6)
-			return NITS_SOCKET_ERROR;
+	if (fd == -1)
+	{
+		perror("socket error\n");
+		return NITS_SOCKET_ERROR;
+	}
 
-		printf ("Calling setup_subscriber %s %s\n", host, port);
-		return sub_fd;
-	//}
+	memcpy(&addr_cpy, ptr->ai_addr, sizeof(struct sockaddr));
+
+	*addrlen = ptr->ai_addrlen;
+	*addr = &addr_cpy;
+
+	freeaddrinfo(res);
+	return fd;
+}
+
+int setup_subscriber(char *host, char *port)
+{
+	socklen_t addrlen;
+  struct sockaddr *addr;
+	int i, result;
+	int fd = client_setup_sock(host, port, SOCK_STREAM, &addrlen, &addr);
+
+	if (fd == NITS_SOCKET_ERROR)
+		return NITS_SOCKET_ERROR;
+
+	for (i = 0; i < 6; i++)
+	{
+		result = connect(fd, addr, addrlen);
+		printf("result: %d\n", result);
+			if (result == 0)
+				break;
+			else
+			{
+				perror("connect error.");
+				sleep(1);
+			}
+	}
+
+	// If the counter is set to 6 return an error.
+	if (i == 6)
+		return NITS_SOCKET_ERROR;
+
+	printf ("Calling setup_subscriber %s %s\n", host, port);
+	return fd;
 }
 
 int setup_publisher(char *host, char *port)
@@ -189,6 +206,33 @@ int setup_discovery (char *host, char *port)
  */
 int register_publisher (char *host, char *port, char *dhost, char *dport)
 {
+	socklen_t addrlen;
+  struct sockaddr *addr;
+	int i, result, bytes;
+	disc_advertise mesg;
+	char pub_addr[ADDRESS_LENGTH];
+
+	int fd = client_setup_sock(dhost, dport, SOCK_DGRAM, &addrlen, &addr);
+
+	if (fd == NITS_SOCKET_ERROR)
+		return NITS_SOCKET_ERROR;
+
+	// Create the advertise message.
+	strcpy(pub_addr, host);
+	strcat(pub_addr, ":");
+	strcat(pub_addr, port);
+
+	mesg.msg_type = 'A';
+	memcpy(&mesg.pub_address, &pub_addr, ADDRESS_LENGTH);
+
+	bytes = sendto(fd, &mesg, sizeof(mesg), 0, addr, addrlen);
+
+	if (bytes < 0) {
+		perror("send error\n");
+		return NITS_SOCKET_ERROR;
+	}
+	
+	printf("bytes: %i\n", bytes);
 	printf ("Calling register_publisher %s %s %s %s\n", host, port,
 					dhost, dport);
 	return (NITS_SOCKET_OK);

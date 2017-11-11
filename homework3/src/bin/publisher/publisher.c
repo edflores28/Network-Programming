@@ -23,7 +23,10 @@ main(int argc, char *argv[])
 	char *phost, *pport;
 	char *dhost, *dport;
 	int fd;
-	if ((setup_publisher ("/unix", "/tmp/hello")) == NITS_SOCKET_ERROR)
+
+	register_publisher("localhost", "8505", "localhost", "8000");
+	
+	if ((setup_publisher ("localhost", "8505")) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Cannot set up publisher.\n");
 		exit(1);
@@ -31,8 +34,15 @@ main(int argc, char *argv[])
 
 	fd = get_next_subscriber();
 
+printf("GOT IT\n");
 	if (fd == NITS_SOCKET_ERROR)
+	{
+		printf("ERROR SETUP");
 		exit(1);
-	printf("success");
+	}
+
+	int bytes = write (fd, "Hello", 5);
+	printf("bytes: %d\n", bytes);
+	scanf("%i",&c);
 	exit (0);
 }
