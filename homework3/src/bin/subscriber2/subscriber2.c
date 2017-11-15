@@ -91,13 +91,6 @@ disc_pub_list request_list(char *host, char *port)
 		printf("Publisher list received from discovery service\n");
 		memset(&list, 0, sizeof(list));
 		memcpy(&list, &buffer, sizeof(list));
-
-		if (list.num_publishers == 0)
-		{
-			printf("There are no publishers available..exiting.\n");
-			close(fd);
-			exit(1);
-		}
 	}
 	close(fd);
 	return list;
@@ -140,24 +133,175 @@ int main(int argc, char *argv[])
 	//  * given command line parameters.
 	//  */
 	// printf ("Host: %s, Port: %s\n", host, port);
-	int i, fd, bytes;
-	char buffer[1024];
+	int i, fd, bytes, num_pubs;
+	int user, length, init_read = -1;
+	char buffer[BUFFER_SIZE];
+	char *pub_host;
+	char *pub_port;
 	disc_pub_list pub_list;
+	fd_set timeout;
+	struct timeval time;
+	char article[128];
+	FILE *file;
 
-	pub_list = request_list("localhost", "8000");
+	pub_list = request_list("localhost", "8000");\
+	num_pubs = atoi(pub_list.num_publishers);
 
-	printf("%s\n", pub_list.num_publishers);
-	exit(1);
-
-	fd = setup_subscriber ("localhost", "8505");
-	if (fd == NITS_SOCKET_ERROR)
+	if (num_pubs == 0)
 	{
-		fprintf (stderr, "Cannot set up publisher.\n");
+		printf("There are no publishers available..exiting.\n");
 		exit(1);
 	}
-	memset(&buffer[0],0,sizeof(buffer));
-	bytes = read(fd, buffer, 1024);
-	printf("bytes %i\n", bytes);
 
+	// Request the the available publishers from the
+	// discovery service.
+
+	printf("The following is a list of available publishers:\n");
+
+	for (i = 0; i < num_pubs; i++)
+		printf("%i:\t%s\n", i+1, pub_list.publisher_address[i]);
+
+	printf("Enter 6 to QUIT or -\n");
+	printf("Select a publisher (1 - %i): ", i);
+	scanf("%i", &user);
+
+	if (user == 6)
+		exit(0);
+
+	// Decrement the user's input and see if the
+	// selection is within range. If the value is not
+	// within range, exit.
+	user--;
+	if ((user >= i )&& (user < 0))
+	{
+		printf("Invalid selection. exiting.");
+		exit(0);
+	}
+
+	get_host_and_port(pub_list.publisher_address[user], &pub_host, &pub_port);
+
+	// Obtain the socket file descriptor for the subscriber.
+	// Exit is there is an error
+	fd = setup_subscriber (pub_host, pub_port);
+
+	if (fd == NITS_SOCKET_ERROR)
+	{
+		fprintf (stderr, "There was an error creating the subscriber.\n");
+		exit(1);
+	}
+
+	// Set up the select system call to sleep
+	// for 100ms. This will help to not block
+	// on the read call when we need to exit.
+	time.tv_sec = 0;
+	time.tv_usec = 100000;
+
+	FD_ZERO(&timeout);
+	FD_SET(fd, &timeout);
+
+	// Obtain the list of articles
+	printf("\nObtaining the list of articles from the publisher...\n\n");
+	bytes = write(fd,"LIST",4);
+
+	if (bytes < 0)
+	{
+		perror("Error writing\n");
+		close(fd);
+		exit(1);
+	}
+
+	// Obtain the LIST from the publisher. Assuming that the publisher will
+	// only send the buffer size of data.
+	bytes = read(fd,buffer,BUFFER_SIZE);
+
+	if (bytes < 0)
+	{
+		perror("Error reading\n");
+		close(fd);
+		exit(1);
+	}
+
+	// Ask the user's input on which publisher that they want to use.
+	printf("The following articles are available:\n");
+	printf("%s\n",buffer);
+
+	memset(&article, 0, sizeof(article));
+
+	printf("Enter the name of the article: ");
+	scanf("%s",article);
+	printf("\n");
+
+	// Obtain the length of the user's input.
+	for (i = 0; i < BUFFER_SIZE; i++)
+	{
+		if (article[i] == 0)
+			break;
+
+			length++;
+	}
+
+	printf("Requesting %s\n",article);
+	bytes = write(fd, article, length);
+
+	if (bytes < 0)
+	{
+		perror("Error writing\n");
+		exit(1);
+	}
+
+	// Read from the socket until there is is no more
+	// data from the publisher. Once the timeout of
+	// 100ms is reached we will break from the loop.
+	while(1)
+	{
+
+		if ((select(fd+1, &timeout, NULL, NULL, &time)) == 0)
+			break;
+
+		bytes = read(fd,buffer,BUFFER_SIZE);
+
+		// At this point bytes are read and if it is the initial
+		// loop open the file to write.
+		if (init_read == -1)
+		{
+			init_read = 0;
+
+			// Obtain a handle to write what we receive from the publisher.
+			// Exit is there is an error.
+			file = fopen(article, "wb");
+
+			if (file == NULL)
+			{
+				perror("Unable to open and write the file");
+				close(fd);
+				exit(1);
+			}
+
+			printf("Opened the file for writing.\n");
+		}
+
+		// Write to the file.
+		fputs(buffer, file);
+
+		// Clear the buffer.
+		memset(&buffer, 0, sizeof(buffer));
+	}
+
+	printf("Finished writing to the file\n");
+
+	// Print out a message if there were no bytes reads.
+	if (init_read == -1)
+		printf("There was nothing recieved from the publisher\n");
+
+	printf("Enter QUIT\n");
+	printf("This will interrupt other clients as well: ");
+	scanf("%s",article);
+
+	// Send QUIT to kill the publisher.
+	bytes = write(fd, "QUIT", 4);
+
+	// Do some cleanup.
+	close(fd);
+	fclose(file);
 	exit (0);
 }

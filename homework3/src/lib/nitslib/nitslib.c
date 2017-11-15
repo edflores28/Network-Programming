@@ -101,7 +101,7 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 
 	if (fd == -1)
 	{
-		perror("socket error\n");
+		perror("socket error");
 		return NITS_SOCKET_ERROR;
 	}
 
