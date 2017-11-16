@@ -11,7 +11,7 @@
 #include "nitslib.h"
 
 #define MAXLEN	256
-#define DEFAULT_PORT	":8404"
+#define DEFAULT_PORT	"localhost:8404"
 
 #define BUFFER_SIZE 1024
 
@@ -139,8 +139,8 @@ int main(int argc, char *argv[])
 	get_host_and_port (discovery, &host, &port);
 
 	printf("%s, %s\n", host, port);
-	
-	pub_list = request_list(host, port);
+
+	pub_list = request_list("128.22.101.247", "8404");
 	num_pubs = atoi(pub_list.num_publishers);
 
 	if (num_pubs == 0)

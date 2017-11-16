@@ -18,7 +18,7 @@
 #include "nitslib.h"
 
 #define MAXLEN (128)
-#define DEFAULT_DISCOVERY ":8404"
+#define DEFAULT_DISCOVERY "localhost:8404"
 #define BUFFER_SIZE 1024
 
 int main(int argc, char *argv[])
