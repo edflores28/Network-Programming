@@ -37,7 +37,7 @@ void child_process(int fd)
 		memset(&buffer[0],0,sizeof(buffer));
 		bytes = read(fd, buffer, BUFFER_SIZE);
 
-		if (bytes < 0)
+		if (bytes <= 0)
 		{
 			printf("Error Reading.. exiting..\n");
 			exit(1);
@@ -99,7 +99,7 @@ void child_process(int fd)
 
 				// Send to the subscriber
 				bytes = write(fd,buffer,BUFFER_SIZE);
-				printf("bytes sent %d\n",bytes);
+				
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));
 			}
@@ -125,9 +125,9 @@ int main(int argc, char *argv[])
 	char *dhost, *dport;
 	int fd;
 
-	register_publisher("localhost", "8505", "localhost", "8000");
+	register_publisher("localhost", "8404", "localhost", "8404");
 
-	if ((setup_publisher ("localhost", "8505")) == NITS_SOCKET_ERROR)
+	if ((setup_publisher ("localhost", "8404")) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Cannot set up publisher.\n");
 		exit(1);

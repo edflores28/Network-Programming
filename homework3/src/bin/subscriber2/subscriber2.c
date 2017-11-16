@@ -79,7 +79,7 @@ disc_pub_list request_list(char *host, char *port)
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, &addr, &addrlen);
+	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, addr, &addrlen);
 
 	if (nbytes < 0)
 	{
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
 	printf("%s, %s\n", host, port);
 
-	pub_list = request_list("128.22.101.247", "8404");
+	pub_list = request_list(host, port);
 	num_pubs = atoi(pub_list.num_publishers);
 
 	if (num_pubs == 0)
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 
 	if (bytes < 0)
 	{
-		perror("Error writing\n");
+		perror("Error writing");
 		exit(1);
 	}
 

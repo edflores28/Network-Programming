@@ -2,6 +2,8 @@
  * Nitslib.h
  * Protocol independent Network Information Transfer System
  */
+#include <sys/socket.h>
+
 #define NITS_SOCKET_ERROR	(-1)
 #define NITS_SOCKET_OK		(0)
 /*

@@ -51,43 +51,36 @@ int server_setup(char *host, char *port, int sock_type)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		switch(ptr->ai_family)
+		if (ptr->ai_family == AF_INET)
 		{
-			case AF_INET:
-			case AF_INET6:
-			case AF_UNIX:
-				if (found != TRUE)
-				{
-					found = TRUE;
-					fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			printf("%d\n", fd);
+			if (fd == -1)
+			{
+				perror("socket error\n");
+				return NITS_SOCKET_ERROR;
+			}
 
-					if (fd == -1)
-					{
-						perror("socket error\n");
-						return NITS_SOCKET_ERROR;
-					}
+			if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+				perror("setsockopt error");
+				return NITS_SOCKET_ERROR;
+			}
 
-					if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
-						perror("setsockopt error");
-						return NITS_SOCKET_ERROR;
-					}
-
-					if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
-					{
-						close(fd);
-						perror("bind error");
-						return NITS_SOCKET_ERROR;
-					}
-				}
-			default:
-				break;
+			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			{
+				close(fd);
+				perror("bind error");
+				return NITS_SOCKET_ERROR;
+			}
+			break;
 		}
 	}
 
 	if (found == FALSE)
 	{
 		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
+		//return NITS_SOCKET_ERROR;
 	}
 
 	freeaddrinfo(res);
@@ -115,27 +108,18 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		switch(ptr->ai_family)
+		if (ptr->ai_family == AF_INET)
 		{
-			case AF_INET:
-			case AF_INET6:
-			case AF_UNIX:
-				if (found == FALSE)
-				{
-					found = TRUE;
-					f_ptr = ptr;
-					fd = socket(f_ptr->ai_family, f_ptr->ai_socktype, f_ptr->ai_protocol);
-				}
-			default:
-				break;
-		 }
-
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			break;
+		}
 	}
-	
+
 	if (found == FALSE)
 	{
 		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
+		//return NITS_SOCKET_ERROR;
 	}
 
 	if (fd == -1)
@@ -143,7 +127,7 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 		perror("socket error");
 		return NITS_SOCKET_ERROR;
 	}
-
+	f_ptr = ptr;
 	memcpy(&addr_cpy, f_ptr->ai_addr, sizeof(struct sockaddr));
 
 	*addrlen = f_ptr->ai_addrlen;

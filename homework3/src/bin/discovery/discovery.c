@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
 	socklen_t size = sizeof(struct sockaddr_storage);
 
-	fd = setup_discovery(host, port);
+	fd = setup_discovery("localhost", "8404");
 
 	if (fd == NITS_SOCKET_ERROR)
 	{
@@ -82,8 +82,9 @@ int main(int argc, char *argv[])
 		memset(&msg_type, 0, sizeof(msg_type));
 
 		// Read available data
-		nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, &addr, &size);
+		nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &size);
 
+		printf("bytes: %d\n", nbytes);
 		if (nbytes >= sizeof(msg_type))
 			memcpy(&msg_type, &buffer, sizeof(msg_type));
 
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
 			memcpy(&disc_mesg.publisher_address[0], &publisher_address, sizeof(disc_mesg.publisher_address));
 
 			printf("Sending PUB_LIST %s\n");
-			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, &addr, size);
+			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, (struct sockaddr*)&addr, size);
 
 			if (nbytes < 0)
 				perror("Error Sending\n");
