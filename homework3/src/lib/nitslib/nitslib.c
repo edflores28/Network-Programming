@@ -14,23 +14,76 @@
 // Global Variables
 static int listen_fd;
 
-enum BOOL {TRUE, FALSE};
-
-int get_family(char *host)
+int setup_subscriber(char *host, char *port)
 {
-	if (host != NULL)
-	{
-		if (strcmp("/unix",host) == 0)
-			return AF_UNIX;
+	int i, result, fd, status, val = 1;
+	struct addrinfo hints, *res, *ptr;
+	struct sockaddr addr_cpy;
+	enum BOOL found = FALSE;
 
-		if (strcmp("/local",host) == 0)
-			return AF_LOCAL;
+	memset(&hints, 0, sizeof (hints));
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
+	{
+		perror("getaddrinfo error");
+		printf("%s\n", gai_strerror(status));
+		return NITS_SOCKET_ERROR;
 	}
-	return AF_INET | AF_INET6;
+
+	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	{
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+	       || ptr->ai_family == AF_UNIX)
+		{
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			break;
+		}
+	}
+
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		return NITS_SOCKET_ERROR;
+	}
+
+	if (fd == -1)
+	{
+		perror("socket error");
+		return NITS_SOCKET_ERROR;
+	}
+
+	if (fd == NITS_SOCKET_ERROR)
+		return NITS_SOCKET_ERROR;
+
+	for (i = 0; i < 6; i++)
+	{
+		result = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
+		printf("result: %d\n", result);
+			if (result == 0)
+				break;
+			else
+			{
+				perror("connect error.");
+				sleep(1);
+			}
+	}
+
+	// If the counter is set to 6 return an error.
+	if (i == 6)
+		return NITS_SOCKET_ERROR;
+
+	printf ("Calling setup_subscriber %s %s\n", host, port);
+	freeaddrinfo(res);
+	return fd;
 }
 
-int server_setup(char *host, char *port, int sock_type)
+int setup_publisher(char *host, char *port)
 {
+	// Variables
 	struct addrinfo hints, *res, *ptr;
 	int fd, status, val =1;
 	enum BOOL found = FALSE;
@@ -38,7 +91,7 @@ int server_setup(char *host, char *port, int sock_type)
 	memset(&hints, 0, sizeof (hints));
 
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = sock_type;
+	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
 	printf("%s, %s ", host, port);
@@ -81,101 +134,8 @@ int server_setup(char *host, char *port, int sock_type)
 	if (found == FALSE)
 	{
 		printf("Unable to find anything in getaddrinfo\n");
-		//return NITS_SOCKET_ERROR;
-	}
-
-	freeaddrinfo(res);
-	return fd;
-}
-
-int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen, struct sockaddr **addr)
-{
-	struct addrinfo hints, *res, *ptr, *f_ptr;
-	struct sockaddr addr_cpy;
-	int fd = -1, status, val = 1;
-	enum BOOL found = FALSE;
-
-	memset(&hints, 0, sizeof (hints));
-
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = sock_type;
-
-	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
-	{
-		perror("getaddrinfo error");
-		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
-		{
-			found = TRUE;
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			break;
-		}
-	}
-
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		//return NITS_SOCKET_ERROR;
-	}
-
-	if (fd == -1)
-	{
-		perror("socket error");
-		return NITS_SOCKET_ERROR;
-	}
-	f_ptr = ptr;
-	memcpy(&addr_cpy, f_ptr->ai_addr, sizeof(struct sockaddr));
-
-	*addrlen = f_ptr->ai_addrlen;
-	*addr = &addr_cpy;
-
-	freeaddrinfo(res);
-	return fd;
-}
-
-int setup_subscriber(char *host, char *port)
-{
-	socklen_t addrlen;
-  struct sockaddr *addr;
-	int i, result;
-	int fd = client_setup_sock(host, port, SOCK_STREAM, &addrlen, &addr);
-
-	if (fd == NITS_SOCKET_ERROR)
-		return NITS_SOCKET_ERROR;
-
-	for (i = 0; i < 6; i++)
-	{
-		result = connect(fd, addr, addrlen);
-		printf("result: %d\n", result);
-			if (result == 0)
-				break;
-			else
-			{
-				perror("connect error.");
-				sleep(1);
-			}
-	}
-
-	// If the counter is set to 6 return an error.
-	if (i == 6)
-		return NITS_SOCKET_ERROR;
-
-	printf ("Calling setup_subscriber %s %s\n", host, port);
-	return fd;
-}
-
-int setup_publisher(char *host, char *port)
-{
-	// Variables
-	int fd;
-
-	if ((fd = server_setup(host, port, SOCK_STREAM)) == NITS_SOCKET_ERROR)
-		return NITS_SOCKET_ERROR;
 
 	if (listen(fd, 5) < 0)
 	{
@@ -184,6 +144,7 @@ int setup_publisher(char *host, char *port)
 	}
 	printf ("Calling setup_publisher %s %s\n", host, port);
 
+	freeaddrinfo(res);
 	listen_fd = fd;
 	return NITS_SOCKET_OK;
 }
@@ -215,10 +176,59 @@ int get_next_subscriber (void)
 
 int setup_discovery (char *host, char *port)
 {
-	int fd;
+	// Variables
+	struct addrinfo hints, *res, *ptr;
+	int fd, status, val =1;
+	enum BOOL found = FALSE;
 
-	if ((fd = server_setup(host, port, SOCK_DGRAM)) == NITS_SOCKET_ERROR)
+	memset(&hints, 0, sizeof (hints));
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	printf("%s, %s ", host, port);
+	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
+	{
+		perror("getaddrinfo error");
+		printf("status: %d", status);
+		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
+	}
+
+	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	{
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
+		{
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+
+			if (fd == -1)
+			{
+				perror("socket error\n");
+				return NITS_SOCKET_ERROR;
+			}
+
+			if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+				perror("setsockopt error");
+				return NITS_SOCKET_ERROR;
+			}
+
+			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			{
+				close(fd);
+				perror("bind error");
+				return NITS_SOCKET_ERROR;
+			}
+			break;
+		}
+	}
+
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		return NITS_SOCKET_ERROR;
+	}
 
 	printf ("Calling setup_discovery %s %s\n", host, port);
 	return fd;
@@ -252,7 +262,8 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+		     || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -263,7 +274,7 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	if (found == FALSE)
 	{
 		printf("Unable to find anything in getaddrinfo\n");
-		//return NITS_SOCKET_ERROR;
+		return NITS_SOCKET_ERROR;
 	}
 
 	if (fd == -1)

@@ -2,8 +2,6 @@
  * Nitslib.h
  * Protocol independent Network Information Transfer System
  */
-#include <sys/socket.h>
-
 #define NITS_SOCKET_ERROR	(-1)
 #define NITS_SOCKET_OK		(0)
 /*
@@ -56,11 +54,11 @@ typedef union {
 	disc_advertise putpub;
 } discovery_msgs;
 
+enum BOOL {TRUE, FALSE};
+
 int get_next_subscriber(void);
 int setup_subscriber (char *host, char *port);
 int setup_publisher (char *host, char *port);
 int setup_discovery (char *host, char *port);
 int register_publisher (char *host, char *port, char *dhost, char *dport);
 int get_host_and_port (char *hostport, char **host, char **port);
-
-int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen, struct sockaddr **addr);

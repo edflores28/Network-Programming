@@ -25,24 +25,52 @@ disc_pub_list request_list(char *host, char *port)
 	char buffer[BUFFER_SIZE];
 	disc_get_pub_list mesg;
 	disc_pub_list list;
-	int nbytes;
+	int nbytes, result, status;
 	socklen_t size;
 	fd_set read;
 	struct timeval time;
-	int res;
+	struct addrinfo hints, *res, *ptr;
+	struct sockaddr addr_cpy;
+	int fd = -1, val = 1;
+	enum BOOL found = FALSE;
+
+	memset(&hints, 0, sizeof (hints));
+
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
+	{
+		perror("getaddrinfo error");
+		printf("%s\n", gai_strerror(status));
+		exit(1);
+	}
+
+	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	{
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+		     || ptr->ai_family == AF_UNIX)
+		{
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			break;
+		}
+	}
+
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		exit(1);
+	}
+
+	if (fd == NITS_SOCKET_ERROR)
+		exit(1);
 
 	// Fill in the message structure.
 	mesg.msg_type = 'G';
 
-	socklen_t addrlen;
-  struct sockaddr *addr;
-
-	int fd = client_setup_sock(host, port, SOCK_DGRAM, &addrlen, &addr);
-	if (fd == NITS_SOCKET_ERROR)
-		exit(1);
-
 	// Send the message to the discovery service.
-	nbytes = sendto(fd, "G", 1, 0, addr, addrlen);
+	nbytes = sendto(fd, "G", 1, 0, ptr->ai_addr, ptr->ai_addrlen);
 
 	printf("bytes sent: %d\n", nbytes);
 
@@ -61,10 +89,10 @@ disc_pub_list request_list(char *host, char *port)
 	FD_ZERO(&read);
 	FD_SET(fd, &read);
 
-	res = select(fd+1, &read, NULL, NULL, &time);
+	result = select(fd+1, &read, NULL, NULL, &time);
 
 	// Print out error message and exit.
-	if (res < 0)
+	if (result < 0)
 	{
 		perror("Select error or timeout reached\n");
 		close(fd);
@@ -79,7 +107,7 @@ disc_pub_list request_list(char *host, char *port)
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, addr, &addrlen);
+	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, ptr->ai_addr, &ptr->ai_addrlen);
 
 	if (nbytes < 0)
 	{
@@ -92,6 +120,7 @@ disc_pub_list request_list(char *host, char *port)
 		memset(&list, 0, sizeof(list));
 		memcpy(&list, &buffer, sizeof(list));
 	}
+	freeaddrinfo(res);
 	close(fd);
 	return list;
 }
