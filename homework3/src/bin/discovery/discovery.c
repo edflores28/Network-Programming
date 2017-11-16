@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
 	socklen_t size = sizeof(struct sockaddr_storage);
 
-	fd = setup_discovery("localhost", "8404");
+	fd = setup_discovery(host, port);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{

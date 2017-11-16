@@ -230,16 +230,47 @@ int setup_discovery (char *host, char *port)
  */
 int register_publisher (char *host, char *port, char *dhost, char *dport)
 {
-	socklen_t addrlen;
-  struct sockaddr *addr;
-	int i, result, bytes;
+	int i, result, bytes, status;
 	disc_advertise mesg;
 	char pub_addr[ADDRESS_LENGTH];
+	struct addrinfo hints, *res, *ptr;
+	struct sockaddr addr_cpy;
+	int fd = -1, val = 1;
+	enum BOOL found = FALSE;
 
-	int fd = client_setup_sock(dhost, dport, SOCK_DGRAM, &addrlen, &addr);
+	memset(&hints, 0, sizeof (hints));
 
-	if (fd == NITS_SOCKET_ERROR)
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
+	{
+		perror("getaddrinfo error");
+		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
+	}
+
+	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	{
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
+		{
+			found = TRUE;
+			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			break;
+		}
+	}
+
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		//return NITS_SOCKET_ERROR;
+	}
+
+	if (fd == -1)
+	{
+		perror("socket error");
+		return NITS_SOCKET_ERROR;
+	}
 
 	// Create the advertise message.
 	strcpy(pub_addr, host);
@@ -249,7 +280,7 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	mesg.msg_type = 'A';
 	memcpy(&mesg.pub_address, &pub_addr, ADDRESS_LENGTH);
 
-	bytes = sendto(fd, &mesg, sizeof(mesg), 0, addr, addrlen);
+	bytes = sendto(fd, &mesg, sizeof(mesg), 0, ptr->ai_addr, ptr->ai_addrlen);
 
 	if (bytes < 0) {
 		perror("send error");
