@@ -18,58 +18,53 @@
 #include "nitslib.h"
 
 #define MAXLEN (128)
-#define DEFAULT_DISCOVERY ":7640"
+#define DEFAULT_DISCOVERY ":8404"
 #define BUFFER_SIZE 1024
 
 int main(int argc, char *argv[])
 {
-	char *host, *port;
-	char discovery[MAXLEN];
-	int discovery_fd;
-	int c;
 
-	// /*
-	//  * Make sure discovery is pointing to a writable string.
-	//  * That's why we
-	//  */
-	// strcpy (discovery, DEFAULT_DISCOVERY);
-  //
-	// /*
-	//  * check args.
-	//  */
-	// while ( (c = getopt(argc, argv, "d:h")) != -1)
-	// {
-	// 	switch (c)
-	// 	{
-	// 	    case 'h':
-	// 		fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
-	// 	    	exit (0);
-	// 	    case 'd':
-	// 		strncpy (discovery, optarg, MAXLEN);
-	// 		break;
-	// 	    default:
-	// 		fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
-	// 		exit (1);
-	// 	}
-	// }
-  //
-  // get_host_and_port (discovery, &host, &port);
-
-	int fd, recvlen;
+	int fd, c, recvlen, nbytes, total_pubs = 0;
 	char buffer[BUFFER_SIZE];
 	DISCOVERY_MESSAGES msg_type;
-
-	int nbytes;
 	disc_get_pub_list sub_mesg;
 	disc_advertise pub_mesg;
 	disc_pub_list disc_mesg;
 	ADDRESS publisher_address[NUM_PUBLISHERS];
 	struct sockaddr_storage addr;
-	int total_pubs = 0;
+	char *host, *port;
+	char discovery[MAXLEN];
+
+	/*
+	 * Make sure discovery is pointing to a writable string.
+	 * That's why we
+	 */
+	strcpy (discovery, DEFAULT_DISCOVERY);
+
+	/*
+	 * check args.
+	 */
+	while ( (c = getopt(argc, argv, "d:h")) != -1)
+	{
+		switch (c)
+		{
+				case 'h':
+					fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
+					exit (0);
+				case 'd':
+					strncpy (discovery, optarg, MAXLEN);
+					break;
+				default:
+					fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
+					exit (1);
+		}
+	}
+
+	get_host_and_port (discovery, &host, &port);
 
 	socklen_t size = sizeof(struct sockaddr_storage);
 
-	fd = setup_discovery("localhost", "8000");
+	fd = setup_discovery(host, port);
 
 	if (fd == NITS_SOCKET_ERROR)
 	{

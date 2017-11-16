@@ -13,21 +13,26 @@
 // Global Variables
 static int listen_fd;
 
+enum BOOL {TRUE, FALSE};
+
 int get_family(char *host)
 {
-	if (strcmp("/unix",host) == 0)
-		return AF_UNIX;
+	if (host != NULL)
+	{
+		if (strcmp("/unix",host) == 0)
+			return AF_UNIX;
 
-	if (strcmp("/local",host) == 0)
-		return AF_LOCAL;
-
-	return AF_INET;
+		if (strcmp("/local",host) == 0)
+			return AF_LOCAL;
+	}
+	return AF_INET | AF_INET6;
 }
 
 int server_setup(char *host, char *port, int sock_type)
 {
 	struct addrinfo hints, *res, *ptr;
 	int fd, status, val =1;
+	enum BOOL found = FALSE;
 
 	memset(&hints, 0, sizeof (hints));
 
@@ -35,48 +40,66 @@ int server_setup(char *host, char *port, int sock_type)
 	hints.ai_socktype = sock_type;
 	hints.ai_flags = AI_PASSIVE;
 
+	printf("%s, %s", host, port);
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
-		perror("getaddrinfo error\n");
+		perror("getaddrinfo error");
+		printf("status: %d", status);
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if (ptr->ai_family == get_family(host))
+		switch(ptr->ai_family)
 		{
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			printf("%d\n", fd);
-			if (fd == -1)
-			{
-				perror("socket error\n");
-				return NITS_SOCKET_ERROR;
-			}
+			case AF_INET:
+			case AF_INET6:
+			case AF_UNIX:
+				if (found != TRUE)
+				{
+					found = TRUE;
+					fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
-			if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
-				perror("setsockopt error");
-				return NITS_SOCKET_ERROR;
-			}
+					if (fd == -1)
+					{
+						perror("socket error\n");
+						return NITS_SOCKET_ERROR;
+					}
 
-			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
-			{
-				close(fd);
-				perror("bind error");
-				return NITS_SOCKET_ERROR;
-			}
-			break;
+					if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
+						perror("setsockopt error");
+						return NITS_SOCKET_ERROR;
+					}
+
+					if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+					{
+						close(fd);
+						perror("bind error");
+						return NITS_SOCKET_ERROR;
+					}
+				}
+			default:
+				break;
 		}
 	}
+
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		return NITS_SOCKET_ERROR;
+	}
+
 	freeaddrinfo(res);
 	return fd;
 }
 
 int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen, struct sockaddr **addr)
 {
-	struct addrinfo hints, *res, *ptr;
+	struct addrinfo hints, *res, *ptr, *f_ptr;
 	struct sockaddr addr_cpy;
 	int fd = -1, status, val = 1;
+	enum BOOL found = FALSE;
 
 	memset(&hints, 0, sizeof (hints));
 
@@ -85,18 +108,34 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
-		perror("getaddrinfo error\n");
+		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if (ptr->ai_family == get_family(host))
+		switch(ptr->ai_family)
 		{
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			break;
-		}
+			case AF_INET:
+			case AF_INET6:
+			case AF_UNIX:
+				if (found == FALSE)
+				{
+					found = TRUE;
+					f_ptr = ptr;
+					fd = socket(f_ptr->ai_family, f_ptr->ai_socktype, f_ptr->ai_protocol);
+				}
+			default:
+				break;
+		 }
+
+	}
+	
+	if (found == FALSE)
+	{
+		printf("Unable to find anything in getaddrinfo\n");
+		return NITS_SOCKET_ERROR;
 	}
 
 	if (fd == -1)
@@ -105,9 +144,9 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 		return NITS_SOCKET_ERROR;
 	}
 
-	memcpy(&addr_cpy, ptr->ai_addr, sizeof(struct sockaddr));
+	memcpy(&addr_cpy, f_ptr->ai_addr, sizeof(struct sockaddr));
 
-	*addrlen = ptr->ai_addrlen;
+	*addrlen = f_ptr->ai_addrlen;
 	*addr = &addr_cpy;
 
 	freeaddrinfo(res);
@@ -231,7 +270,7 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		perror("send error\n");
 		return NITS_SOCKET_ERROR;
 	}
-	
+
 	printf("bytes: %i\n", bytes);
 	printf ("Calling register_publisher %s %s %s %s\n", host, port,
 					dhost, dport);

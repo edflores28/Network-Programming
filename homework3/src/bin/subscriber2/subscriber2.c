@@ -11,7 +11,7 @@
 #include "nitslib.h"
 
 #define MAXLEN	256
-#define DEFAULT_PORT	":7640"
+#define DEFAULT_PORT	":8404"
 
 #define BUFFER_SIZE 1024
 
@@ -102,38 +102,8 @@ disc_pub_list request_list(char *host, char *port)
 
 int main(int argc, char *argv[])
 {
-	// int c;
-	// char *host;
-	// char *port;
-	// char *discovery = NULL;
-	//
-	// while ( (c = getopt(argc, argv, "hd:")) != -1)
-	// {
-	// 	switch (c)
-	// 	{
-	// 	    case 'd':
-	// 		discovery = optarg;
-	// 		break;
-	// 	    case 'h':
-	// 	    default:
-	// 		fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
-	// 		exit (1);
-	// 	}
-	// }
-	// if (discovery == NULL)
-	// {
-	// 	discovery = malloc(MAXLEN);
-	// 	strcpy (discovery, DEFAULT_PORT);
-	// }
-	//
-	// get_host_and_port (discovery, &host, &port);
-	//
-	// /*
-	//  * Create connectionless socket for discovery service, according to the
-	//  * given command line parameters.
-	//  */
-	// printf ("Host: %s, Port: %s\n", host, port);
-	int i, fd, bytes, num_pubs;
+	// Variables
+	int i, fd, bytes, num_pubs, c;
 	int user, length, init_read = -1;
 	char buffer[BUFFER_SIZE];
 	char *pub_host;
@@ -141,10 +111,36 @@ int main(int argc, char *argv[])
 	disc_pub_list pub_list;
 	fd_set timeout;
 	struct timeval time;
-	char article[128];
+	char article[MAXLEN];
 	FILE *file;
+	char *host;
+	char *port;
+	char *discovery = NULL;
 
-	pub_list = request_list("localhost", "8000");\
+	while ((c = getopt(argc, argv, "hd:")) != -1)
+	{
+		switch (c)
+		{
+				case 'd':
+				discovery = optarg;
+				break;
+				case 'h':
+				default:
+				fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
+				exit (1);
+		}
+	}
+	if (discovery == NULL)
+	{
+		discovery = malloc(MAXLEN);
+		strcpy (discovery, DEFAULT_PORT);
+	}
+
+	get_host_and_port (discovery, &host, &port);
+
+	printf("%s, %s\n", host, port);
+	
+	pub_list = request_list(host, port);
 	num_pubs = atoi(pub_list.num_publishers);
 
 	if (num_pubs == 0)
