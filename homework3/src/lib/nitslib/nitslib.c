@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include "nitslib.h"
+#include <arpa/inet.h>
 
 // Global Variables
 static int listen_fd;
@@ -40,7 +41,7 @@ int server_setup(char *host, char *port, int sock_type)
 	hints.ai_socktype = sock_type;
 	hints.ai_flags = AI_PASSIVE;
 
-	printf("%s, %s", host, port);
+	printf("%s, %s ", host, port);
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
@@ -51,11 +52,11 @@ int server_setup(char *host, char *port, int sock_type)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if (ptr->ai_family == AF_INET)
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			printf("%d\n", fd);
+
 			if (fd == -1)
 			{
 				perror("socket error\n");
@@ -108,7 +109,7 @@ int client_setup_sock(char *host, char *port, int sock_type, socklen_t *addrlen,
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if (ptr->ai_family == AF_INET)
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -251,11 +252,10 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	bytes = sendto(fd, &mesg, sizeof(mesg), 0, addr, addrlen);
 
 	if (bytes < 0) {
-		perror("send error\n");
+		perror("send error");
 		return NITS_SOCKET_ERROR;
 	}
 
-	printf("bytes: %i\n", bytes);
 	printf ("Calling register_publisher %s %s %s %s\n", host, port,
 					dhost, dport);
 	return (NITS_SOCKET_OK);
