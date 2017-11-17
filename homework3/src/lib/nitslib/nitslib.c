@@ -303,7 +303,8 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	mesg.msg_type = 'A';
 	memcpy(&mesg.pub_address, &pub_addr, ADDRESS_LENGTH);
 
-	bytes = sendto(fd, &mesg, sizeof(mesg), 0, ptr->ai_addr, ptr->ai_addrlen);
+	//bytes = sendto(fd, &mesg, sizeof(mesg), 0, ptr->ai_addr, ptr->ai_addrlen);
+	bytes = write(fd, &mesg, sizeof(mesg));
 
 	if (bytes < 0) {
 		perror("send error");
