@@ -16,7 +16,8 @@
 
 // Path's to look for the articles
 char myArticle[] = "/home/eflores4/Articles/";
-char netArticle[] = "/home/edwin/";
+//char netArticle[] = "/home/edwin/";
+char netArticle[] = "/home/net_class/474/Articles/";
 
 /**
 * This method is the method that the child process will execute.
