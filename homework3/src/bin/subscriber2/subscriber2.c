@@ -53,6 +53,12 @@ disc_pub_list request_list(char *host, char *port)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+
+			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			{
+				perror("connect error");
+				exit(1);
+			}
 			break;
 		}
 	}
@@ -70,7 +76,8 @@ disc_pub_list request_list(char *host, char *port)
 	mesg.msg_type = 'G';
 
 	// Send the message to the discovery service.
-	nbytes = sendto(fd, "G", 1, 0, ptr->ai_addr, ptr->ai_addrlen);
+	//nbytes = sendto(fd, "G", 1, 0, ptr->ai_addr, ptr->ai_addrlen);
+	nbytes = write(fd, "G", 1);
 
 	printf("bytes sent: %d\n", nbytes);
 

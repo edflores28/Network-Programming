@@ -105,7 +105,8 @@ int setup_publisher(char *host, char *port)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+	       || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -198,9 +199,11 @@ int setup_discovery (char *host, char *port)
 
 	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6)
+		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+	       || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
+
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
 			if (fd == -1)
@@ -266,7 +269,24 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		     || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
+
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			if (fd == -1)
+			{
+				perror("socket error");
+				return NITS_SOCKET_ERROR;
+			}
+
+			if (ptr->ai_family == AF_UNIX)
+				unlink(dport);
+
+			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			{
+				close(fd);
+				perror("bind error");
+				return NITS_SOCKET_ERROR;
+			}
+
 			break;
 		}
 	}
@@ -274,12 +294,6 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	if (found == FALSE)
 	{
 		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
-	}
-
-	if (fd == -1)
-	{
-		perror("socket error");
 		return NITS_SOCKET_ERROR;
 	}
 

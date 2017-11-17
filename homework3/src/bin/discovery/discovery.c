@@ -17,6 +17,9 @@
 #include <unistd.h>
 #include "nitslib.h"
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/un.h>
 #define MAXLEN (128)
 #define DEFAULT_DISCOVERY "localhost:8404"
 #define BUFFER_SIZE 1024
@@ -32,6 +35,7 @@ int main(int argc, char *argv[])
 	disc_pub_list disc_mesg;
 	ADDRESS publisher_address[NUM_PUBLISHERS];
 	struct sockaddr_storage addr;
+	socklen_t size;
 	char *host, *port;
 	char discovery[MAXLEN];
 
@@ -62,8 +66,6 @@ int main(int argc, char *argv[])
 
 	get_host_and_port (discovery, &host, &port);
 
-	socklen_t size = sizeof(struct sockaddr_storage);
-
 	fd = setup_discovery(host, port);
 
 	if (fd == NITS_SOCKET_ERROR)
@@ -81,10 +83,11 @@ int main(int argc, char *argv[])
 		memset(&buffer, 0, sizeof(buffer));
 		memset(&msg_type, 0, sizeof(msg_type));
 
+		size = sizeof(addr);
+
 		// Read available data
 		nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &size);
 
-		printf("bytes: %d\n", nbytes);
 		if (nbytes >= sizeof(msg_type))
 			memcpy(&msg_type, &buffer, sizeof(msg_type));
 
@@ -126,11 +129,12 @@ int main(int argc, char *argv[])
 			sprintf(disc_mesg.num_publishers, "%d", total_pubs);
 			memcpy(&disc_mesg.publisher_address[0], &publisher_address, sizeof(disc_mesg.publisher_address));
 
-			printf("Sending PUB_LIST %s\n");
+			printf("Sending PUB_LIST\n");
 			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, (struct sockaddr*)&addr, size);
-
+			//nbytes = write(fd, &disc_mesg, sizeof(disc_mesg));
+			printf("%d\n", nbytes);
 			if (nbytes < 0)
-				perror("Error Sending\n");
+				perror("Error Sending");
 
 			// Clear the message
 			memset(&sub_mesg, 0, sizeof(sub_mesg));
