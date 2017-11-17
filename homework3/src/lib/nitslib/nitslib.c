@@ -256,7 +256,7 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
+	if ((status = getaddrinfo(dhost, dport, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
@@ -280,13 +280,11 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 			if (ptr->ai_family == AF_UNIX)
 				unlink(dport);
 
-			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
 			{
-				close(fd);
-				perror("bind error");
+				perror("connect error");
 				return NITS_SOCKET_ERROR;
 			}
-
 			break;
 		}
 	}

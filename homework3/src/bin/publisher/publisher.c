@@ -13,6 +13,7 @@
 #define ART_BUFLEN 1024
 
 #define BUFFER_SIZE 1024
+#define DEFAULT_PORT	"localhost:8404"
 
 // Path's to look for the articles
 char myArticle[] = "/home/eflores4/Articles/";
@@ -100,7 +101,7 @@ void child_process(int fd)
 
 				// Send to the subscriber
 				bytes = write(fd,buffer,BUFFER_SIZE);
-				
+
 				// Clear the buffer.
 				memset(&buffer, 0, sizeof(buffer));
 			}
@@ -120,15 +121,49 @@ void child_process(int fd)
 int main(int argc, char *argv[])
 {
 	int c;
-	char publisher[MAXLEN];
-	char discovery[MAXLEN];
+	//char publisher[MAXLEN];
+	//char discovery[MAXLEN];
 	char *phost, *pport;
 	char *dhost, *dport;
 	int fd;
 
-	register_publisher("localhost", "8404", "localhost", "8404");
+	char *publisher = NULL;
+	char *discovery = NULL;
 
-	if ((setup_publisher ("localhost", "8404")) == NITS_SOCKET_ERROR)
+	while ((c = getopt(argc, argv, "hd:")) != -1)
+	{
+		switch (c)
+		{
+				case 'd':
+				discovery = optarg;
+				break;
+				case 'p':
+				publisher = optarg;
+				default:
+				fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
+				exit (1);
+		}
+	}
+	if (discovery == NULL)
+	{
+		discovery = malloc(MAXLEN);
+		strcpy (discovery, DEFAULT_PORT);
+	}
+
+	if (publisher == NULL)
+	{
+		publisher = malloc(MAXLEN);
+		strcpy (publisher, DEFAULT_PORT);
+	}
+
+	get_host_and_port (discovery, &dhost, &dport);
+	get_host_and_port (publisher, &phost, &pport);
+
+	printf("P: %s, %s D: %s, %s\n", phost, pport, dhost, dport);
+
+	register_publisher(phost, pport, dhost, dport);
+
+	if ((setup_publisher (phost, pport)) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Cannot set up publisher.\n");
 		exit(1);
