@@ -10,6 +10,9 @@
 #include <unistd.h>
 #include "nitslib.h"
 #include <arpa/inet.h>
+#include <sys/un.h>
+
+#define BUFFER_SIZE 1024
 
 // Global Variables
 static int listen_fd;
@@ -20,6 +23,8 @@ int setup_subscriber(char *host, char *port)
 	struct addrinfo hints, *res, *ptr;
 	struct sockaddr addr_cpy;
 	enum BOOL found = FALSE;
+	char gethost[BUFFER_SIZE];
+	char getserv[BUFFER_SIZE];
 
 	memset(&hints, 0, sizeof (hints));
 
@@ -32,17 +37,17 @@ int setup_subscriber(char *host, char *port)
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
+	ptr = res;
+	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	//{
 		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
 	       || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
 			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			break;
+			//break;
 		}
-	}
+	//}
 
 	if (found == FALSE)
 	{
@@ -76,7 +81,9 @@ int setup_subscriber(char *host, char *port)
 	if (i == 6)
 		return NITS_SOCKET_ERROR;
 
-	printf ("Calling setup_subscriber %s %s\n", host, port);
+	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+
+	printf ("Calling setup_subscriber %s %s\n", gethost, getserv);
 	freeaddrinfo(res);
 	return fd;
 }
@@ -87,6 +94,8 @@ int setup_publisher(char *host, char *port)
 	struct addrinfo hints, *res, *ptr;
 	int fd, status, val =1;
 	enum BOOL found = FALSE;
+	char gethost[BUFFER_SIZE];
+	char getserv[BUFFER_SIZE];
 
 	memset(&hints, 0, sizeof (hints));
 
@@ -102,9 +111,9 @@ int setup_publisher(char *host, char *port)
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
+	ptr = res;
+	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	//{
 		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
 	       || ptr->ai_family == AF_UNIX)
 		{
@@ -128,9 +137,9 @@ int setup_publisher(char *host, char *port)
 				perror("bind error");
 				return NITS_SOCKET_ERROR;
 			}
-			break;
+			//break;
 		}
-	}
+	//}
 
 	if (found == FALSE)
 	{
@@ -143,7 +152,9 @@ int setup_publisher(char *host, char *port)
 		perror("listen error\n\n");
 		return NITS_SOCKET_ERROR;
 	}
-	printf ("Calling setup_publisher %s %s\n", host, port);
+
+	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Calling setup_publisher %s %s\n", gethost, getserv);
 
 	freeaddrinfo(res);
 	listen_fd = fd;
@@ -181,6 +192,8 @@ int setup_discovery (char *host, char *port)
 	struct addrinfo hints, *res, *ptr;
 	int fd, status, val =1;
 	enum BOOL found = FALSE;
+	char gethost[BUFFER_SIZE];
+	char getserv[BUFFER_SIZE];
 
 	memset(&hints, 0, sizeof (hints));
 
@@ -188,7 +201,6 @@ int setup_discovery (char *host, char *port)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	printf("%s, %s ", host, port);
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
@@ -197,8 +209,9 @@ int setup_discovery (char *host, char *port)
 		return NITS_SOCKET_ERROR;
 	}
 
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
+	ptr = res;
+	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	//{
 		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
 	       || ptr->ai_family == AF_UNIX)
 		{
@@ -223,9 +236,9 @@ int setup_discovery (char *host, char *port)
 				perror("bind error");
 				return NITS_SOCKET_ERROR;
 			}
-			break;
+			//break;
 		}
-	}
+	//}
 
 	if (found == FALSE)
 	{
@@ -233,7 +246,8 @@ int setup_discovery (char *host, char *port)
 		return NITS_SOCKET_ERROR;
 	}
 
-	printf ("Calling setup_discovery %s %s\n", host, port);
+	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Calling setup_discovery %s %s\n", gethost, getserv);
 	return fd;
 }
 
@@ -250,11 +264,21 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	struct sockaddr addr_cpy;
 	int fd = -1, val = 1;
 	enum BOOL found = FALSE;
+	char gethost[BUFFER_SIZE];
+	char getserv[BUFFER_SIZE];
 
 	memset(&hints, 0, sizeof (hints));
 
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
+
+	fd = setup_discovery(dhost, NULL);
+
+	if (fd == NITS_SOCKET_ERROR)
+	{
+			perror("Error creating discovery service..exiting..");
+			return NITS_SOCKET_ERROR;
+	}
 
 	if ((status = getaddrinfo(dhost, dport, &hints, &res)) != 0)
 	{
@@ -262,32 +286,32 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
+	ptr=res;
+	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	//{
 		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
 		     || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
 
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			if (fd == -1)
-			{
-				perror("socket error");
-				return NITS_SOCKET_ERROR;
-			}
+			//fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			//if (fd == -1)
+		//	{
+			//	perror("socket error");
+			//	return NITS_SOCKET_ERROR;
+		//}
 
-			if (ptr->ai_family == AF_UNIX)
-				unlink(dport);
+			//if (ptr->ai_family == AF_UNIX)
+				//unlink(dport);
 
 			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
 			{
 				perror("connect error");
 				return NITS_SOCKET_ERROR;
 			}
-			break;
+			//break;
 		}
-	}
+	//}
 
 	if (found == FALSE)
 	{
@@ -303,7 +327,6 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	mesg.msg_type = 'A';
 	memcpy(&mesg.pub_address, &pub_addr, ADDRESS_LENGTH);
 
-	//bytes = sendto(fd, &mesg, sizeof(mesg), 0, ptr->ai_addr, ptr->ai_addrlen);
 	bytes = write(fd, &mesg, sizeof(mesg));
 
 	if (bytes < 0) {
@@ -311,8 +334,9 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		return NITS_SOCKET_ERROR;
 	}
 
-	printf ("Calling register_publisher %s %s %s %s\n", host, port,
-					dhost, dport);
+	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+
+	printf ("Calling register_publisher %s %s %s %s\n", host, port, gethost, getserv);
 	return (NITS_SOCKET_OK);
 }
 

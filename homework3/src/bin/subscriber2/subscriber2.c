@@ -27,7 +27,7 @@ disc_pub_list request_list(char *host, char *port)
 	disc_pub_list list;
 	int nbytes, result, status;
 	socklen_t size;
-	fd_set read;
+	fd_set recv;
 	struct timeval time;
 	struct addrinfo hints, *res, *ptr;
 	struct sockaddr addr_cpy;
@@ -39,29 +39,38 @@ disc_pub_list request_list(char *host, char *port)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
+	fd = setup_discovery(host, NULL);
+
+	if (fd == NITS_SOCKET_ERROR)
+	{
+			perror("Error creating discovery service..exiting..");
+			exit(1);
+	}
+
+
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
 		exit(1);
 	}
-
-	for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	{
+	ptr = res;
+	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
+	//{
 		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
 		     || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			//fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
 			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
 			{
 				perror("connect error");
 				exit(1);
 			}
-			break;
+			//break;
 		}
-	}
+	//}
 
 	if (found == FALSE)
 	{
@@ -77,7 +86,7 @@ disc_pub_list request_list(char *host, char *port)
 
 	// Send the message to the discovery service.
 	//nbytes = sendto(fd, "G", 1, 0, ptr->ai_addr, ptr->ai_addrlen);
-	nbytes = write(fd, "G", 1);
+	nbytes = write(fd, &mesg, sizeof(mesg));
 
 	printf("bytes sent: %d\n", nbytes);
 
@@ -93,10 +102,10 @@ disc_pub_list request_list(char *host, char *port)
 	time.tv_usec = 0;
 
 	// Add the file descriptor to the set.
-	FD_ZERO(&read);
-	FD_SET(fd, &read);
+	FD_ZERO(&recv);
+	FD_SET(fd, &recv);
 
-	result = select(fd+1, &read, NULL, NULL, &time);
+	result = select(fd+1, &recv, NULL, NULL, &time);
 
 	// Print out error message and exit.
 	if (result < 0)
@@ -114,8 +123,8 @@ disc_pub_list request_list(char *host, char *port)
 		exit(1);
 	}
 
-	nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, ptr->ai_addr, &ptr->ai_addrlen);
-
+	//nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, ptr->ai_addr, &ptr->ai_addrlen);
+	nbytes = read(fd, buffer, BUFFER_SIZE);
 	if (nbytes < 0)
 	{
 		perror("Error reading\n");
