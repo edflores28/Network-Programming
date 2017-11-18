@@ -1,10 +1,14 @@
 /*
- *	Discovery service
+ *Project: Assignment 3
  *
- * Usage : discovery -d <host>:<port>
- *	   discovery -d :<port>
- * If host not supplied, use ""
- * If port not supplied, use DEFAULT_DISCOVERY (:<your port>)
+ *Progam: discovery
+ *File Name: discovery.c
+ *Purpose: Service that communicates with both the
+ *         publisher and subscriber via datagrams.
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,16 +21,19 @@
 #include <unistd.h>
 #include "nitslib.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/un.h>
+//#include <arpa/inet.h>
+//#include <netinet/in.h>
+//#include <sys/un.h>
 #define MAXLEN (128)
 #define DEFAULT_DISCOVERY "localhost:8404"
 #define BUFFER_SIZE 1024
 
+/**
+*	The main program.
+*/
 int main(int argc, char *argv[])
 {
-
+	// Variables
 	int fd, c, recvlen, nbytes, total_pubs = 0;
 	char buffer[BUFFER_SIZE];
 	DISCOVERY_MESSAGES msg_type;
@@ -39,22 +46,14 @@ int main(int argc, char *argv[])
 	char *host, *port;
 	char discovery[MAXLEN];
 
-	/*
-	 * Make sure discovery is pointing to a writable string.
-	 * That's why we
-	 */
+	// Copy the default discovery path.
 	strcpy (discovery, DEFAULT_DISCOVERY);
 
-	/*
-	 * check args.
-	 */
-	while ( (c = getopt(argc, argv, "d:h")) != -1)
+	// Check and parse if there are and command line options.
+	while ( (c = getopt(argc, argv, "d")) != -1)
 	{
 		switch (c)
 		{
-				case 'h':
-					fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
-					exit (0);
 				case 'd':
 					strncpy (discovery, optarg, MAXLEN);
 					break;
@@ -64,8 +63,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	// Parse the discovery information.
 	get_host_and_port (discovery, &host, &port);
 
+	// Create the socket.
 	fd = setup_discovery(host, port);
 
 	if (fd == NITS_SOCKET_ERROR)
@@ -91,7 +92,6 @@ int main(int argc, char *argv[])
 		if (nbytes >= sizeof(msg_type))
 			memcpy(&msg_type, &buffer, sizeof(msg_type));
 
-		//printf("mesg %s\n", msg_type);
 		// Process messages send from the publisher
 		if (msg_type == 'A')
 		{
@@ -131,8 +131,7 @@ int main(int argc, char *argv[])
 
 			printf("Sending PUB_LIST\n");
 			nbytes = sendto(fd, &disc_mesg, sizeof(disc_mesg), 0, (struct sockaddr*)&addr, size);
-			//nbytes = write(fd, &disc_mesg, sizeof(disc_mesg));
-			printf("%d\n", nbytes);
+
 			if (nbytes < 0)
 				perror("Error Sending");
 
