@@ -1,3 +1,15 @@
+/*
+ *Project: Assignment 3
+ *
+ *Progam: subscriber2
+ *File Name: subscriber2.c
+ *Purpose: Communicates with publisher and discovery services.
+ *         to obtain an article. Protocol independent implementation
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -22,6 +34,7 @@
 */
 disc_pub_list request_list(char *host, char *port)
 {
+	// Variables.
 	char buffer[BUFFER_SIZE];
 	disc_get_pub_list mesg;
 	disc_pub_list list;
@@ -34,64 +47,43 @@ disc_pub_list request_list(char *host, char *port)
 	int fd = -1, val = 1;
 	enum BOOL found = FALSE;
 
+	// Zero out the hints and set the hints.
 	memset(&hints, 0, sizeof (hints));
-
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-	// fd = setup_discovery(host, NULL);
-  //
-	// if (fd == NITS_SOCKET_ERROR)
-	// {
-	// 		perror("Error creating discovery service..exiting..");
-	// 		exit(1);
-	// }
-
-
+	// Obtain the list of addresses
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
 		exit(1);
 	}
-	ptr = res;
-	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
-	//{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
-		     || ptr->ai_family == AF_UNIX)
-		{
-			found = TRUE;
-			if (ptr->ai_family == AF_UNIX)
-				fd = setup_discovery(host, NULL);
-			else
-				fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
-			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
-			{
-				perror("connect error");
-				exit(1);
-			}
-			//break;
-		}
-	//}
+	// If the address is AF_LOCAL/UNIX then call setup discovery.
+	// This will create the end point that is needed in order
+	// to communicate properly. Otherwise just create a socket.
+	if (res->ai_family == AF_UNIX)
+		fd = setup_discovery(host, NULL);
+	else
+		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		exit(1);
-	}
-
+	// Exit if there was an issue.
 	if (fd == NITS_SOCKET_ERROR)
 		exit(1);
+
+	// Establish a connection.
+	if (connect(fd, res->ai_addr, res->ai_addrlen) < 0)
+  {
+		perror("connect error");
+		exit(1);
+	}
 
 	// Fill in the message structure.
 	mesg.msg_type = 'G';
 
 	// Send the message to the discovery service.
-	//nbytes = sendto(fd, "G", 1, 0, ptr->ai_addr, ptr->ai_addrlen);
 	nbytes = write(fd, &mesg, sizeof(mesg));
-
-	printf("bytes sent: %d\n", nbytes);
 
 	// Implement a 5 second wait.
 	if (nbytes < 0)
@@ -126,28 +118,29 @@ disc_pub_list request_list(char *host, char *port)
 		exit(1);
 	}
 
-	//nbytes = recvfrom(fd, buffer, BUFFER_SIZE, 0, ptr->ai_addr, &ptr->ai_addrlen);
+	// Obtain the discovery service data.
 	nbytes = read(fd, buffer, BUFFER_SIZE);
 	if (nbytes < 0)
 	{
 		perror("Error reading\n");
 	}
 
+	// Check to see if we recieved the right sized message.
 	if (nbytes == sizeof(disc_pub_list))
 	{
 		printf("Publisher list received from discovery service\n");
 		memset(&list, 0, sizeof(list));
 		memcpy(&list, &buffer, sizeof(list));
 	}
+
 	freeaddrinfo(res);
 	close(fd);
 	return list;
 }
 
-/*
- * Usage: subscriber2 -h -d <discoveryhost>:<discoveryport>
- */
-
+/**
+*	The main program.
+*/
 int main(int argc, char *argv[])
 {
 	// Variables
@@ -165,19 +158,22 @@ int main(int argc, char *argv[])
 	char *port;
 	char *discovery = NULL;
 
-	while ((c = getopt(argc, argv, "hd:")) != -1)
+	// Check and parse if there are and command line options.
+	while ((c = getopt(argc, argv, "d:")) != -1)
 	{
 		switch (c)
 		{
 				case 'd':
 				discovery = optarg;
 				break;
-				case 'h':
 				default:
 				fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
 				exit (1);
 		}
 	}
+
+	// Set the discovery information if nothing was entered, and
+	// split the string.
 	if (discovery == NULL)
 	{
 		discovery = malloc(MAXLEN);
@@ -186,8 +182,7 @@ int main(int argc, char *argv[])
 
 	get_host_and_port (discovery, &host, &port);
 
-	printf("%s, %s\n", host, port);
-
+	// Request a list of publishers.
 	pub_list = request_list(host, port);
 	num_pubs = atoi(pub_list.num_publishers);
 
@@ -199,7 +194,6 @@ int main(int argc, char *argv[])
 
 	// Request the the available publishers from the
 	// discovery service.
-
 	printf("The following is a list of available publishers:\n");
 
 	for (i = 0; i < num_pubs; i++)
@@ -222,6 +216,7 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
+	// Parse the publisher port and host information.
 	get_host_and_port(pub_list.publisher_address[user], &pub_host, &pub_port);
 
 	// Obtain the socket file descriptor for the subscriber.
