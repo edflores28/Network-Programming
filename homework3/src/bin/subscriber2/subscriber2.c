@@ -39,13 +39,13 @@ disc_pub_list request_list(char *host, char *port)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-	fd = setup_discovery(host, NULL);
-
-	if (fd == NITS_SOCKET_ERROR)
-	{
-			perror("Error creating discovery service..exiting..");
-			exit(1);
-	}
+	// fd = setup_discovery(host, NULL);
+  //
+	// if (fd == NITS_SOCKET_ERROR)
+	// {
+	// 		perror("Error creating discovery service..exiting..");
+	// 		exit(1);
+	// }
 
 
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
@@ -61,7 +61,10 @@ disc_pub_list request_list(char *host, char *port)
 		     || ptr->ai_family == AF_UNIX)
 		{
 			found = TRUE;
-			//fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			if (ptr->ai_family == AF_UNIX)
+				fd = setup_discovery(host, NULL);
+			else
+				fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
 			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
 			{

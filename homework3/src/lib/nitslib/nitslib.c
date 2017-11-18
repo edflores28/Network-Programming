@@ -272,13 +272,7 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-	fd = setup_discovery(dhost, NULL);
 
-	if (fd == NITS_SOCKET_ERROR)
-	{
-			perror("Error creating discovery service..exiting..");
-			return NITS_SOCKET_ERROR;
-	}
 
 	if ((status = getaddrinfo(dhost, dport, &hints, &res)) != 0)
 	{
@@ -294,7 +288,16 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		{
 			found = TRUE;
 
-			//fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			if (ptr->ai_family == AF_UNIX)
+					fd = setup_discovery(dhost, NULL);
+			else
+					fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+
+			if (fd == NITS_SOCKET_ERROR)
+			{
+					perror("Error creating discovery service..exiting..");
+					return NITS_SOCKET_ERROR;
+			}
 			//if (fd == -1)
 		//	{
 			//	perror("socket error");
