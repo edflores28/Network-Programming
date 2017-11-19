@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	char *discovery = NULL;
 
 	// Check and parse if there are and command line options.
-	while ((c = getopt(argc, argv, "pd:")) != -1)
+	while ((c = getopt(argc, argv, "d:p:")) != -1)
 	{
 		switch (c)
 		{
