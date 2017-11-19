@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	char *discovery = NULL;
 
 	// Check and parse if there are and command line options.
-	while ((c = getopt(argc, argv, "hd:")) != -1)
+	while ((c = getopt(argc, argv, "pd:")) != -1)
 	{
 		switch (c)
 		{
@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
 				break;
 				case 'p':
 				publisher = optarg;
+				break;
 				default:
 				fprintf (stderr, "Usage: %s -d <host:port>\n", argv[0]);
 				exit (1);
