@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	strcpy (discovery, DEFAULT_DISCOVERY);
 
 	// Check and parse if there are and command line options.
-	while ( (c = getopt(argc, argv, "d")) != -1)
+	while ( (c = getopt(argc, argv, "d:")) != -1)
 	{
 		switch (c)
 		{
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	// Wait for messages.
 	while(1)
 	{
-		printf("Waiting for messages!\n");
+		printf("\nWaiting for messages!\n");
 
 		// Clear the buffer
 		memset(&buffer, 0, sizeof(buffer));
