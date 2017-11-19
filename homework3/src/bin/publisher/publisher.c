@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include "nitslib.h"
 
 #define MAXLEN 1024
@@ -64,7 +65,7 @@ void child_process(int fd)
 		{
 			printf("QUIT received, exiting..\n");
 			close(fd);
-			//kill(getppid(), SIGKILL);
+			kill(getppid(), SIGKILL);
 			exit(1);
 		}
 
@@ -139,6 +140,7 @@ int main(int argc, char *argv[])
 	char *dhost, *dport;
 	char *publisher = NULL;
 	char *discovery = NULL;
+	pid_t pID;
 
 	// Check and parse if there are and command line options.
 	while ((c = getopt(argc, argv, "d:p:")) != -1)
@@ -185,16 +187,37 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// Wait for the subscriber.
-	fd = get_next_subscriber();
-
-	if (fd == NITS_SOCKET_ERROR)
+	// Run the loop until terminated
+	while(1)
 	{
-		printf("ERROR SETUP");
-		exit(1);
+			// Obtain the file descriptor for the subscriber.
+			// Exit is there is an error.
+			fd = get_next_subscriber();
+
+			if (fd == NITS_SOCKET_ERROR)
+			{
+				perror("Error obtaining socket");
+				exit(1);
+			}
+
+			// Create a child process
+			pID = fork();
+
+			// Exit if there is an error.
+			if (pID < 0){
+				perror("Failed to fork!\n");
+				exit(1);
+			}
+
+			// Have the child process do it's work.
+			if (pID == 0){
+				child_process(fd);
+			}
+
+			// Parent has no need for the file desciptor
+			close(fd);
 	}
 
-	child_process(fd);
 
 	exit (0);
 }
