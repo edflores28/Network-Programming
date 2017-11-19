@@ -1,7 +1,29 @@
 /*
- * Nitslib.h
- * Protocol independent Network Information Transfer System
- */
+*Project: Assignment 3
+*
+*Library: nitslib
+*File Name: nitslib.cp
+*Purpose: provides utilities to set up client and server
+*         sockets. Protocol independent version.
+*
+*Synopsis (Usage and Parameters):
+*
+*	  setup_subscriber(char *host, char *port)
+*
+* 	setup_publisher(cchar *host, char *port)
+*
+* 	get_next_subscriber(void)
+*
+*   setup_discovery(char *host, char *port)
+*
+*   register_publisher (char *host, char *port, char *dhost, char *dport);
+*
+*   get_host_and_port (char *hostport, char **host, char **port);
+*
+*Programmer: Edwin Flores
+*Course: EN.605.474.81
+*
+*/
 #define NITS_SOCKET_ERROR	(-1)
 #define NITS_SOCKET_OK		(0)
 /*

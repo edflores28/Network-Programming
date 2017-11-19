@@ -1,6 +1,29 @@
 /*
- * Pretty header file stuff is here.
- */
+*Project: Assignment 3
+*
+*Library: nitslib
+*File Name: nitslib.cp
+*Purpose: provides utilities to set up client and server
+*         sockets. Protocol independent version.
+*
+*Synopsis (Usage and Parameters):
+*
+*	  setup_subscriber(char *host, char *port)
+*
+* 	setup_publisher(cchar *host, char *port)
+*
+* 	get_next_subscriber(void)
+*
+*   setup_discovery(char *host, char *port)
+*
+*   register_publisher (char *host, char *port, char *dhost, char *dport);
+*
+*   get_host_and_port (char *hostport, char **host, char **port);
+*
+*Programmer: Edwin Flores
+*Course: EN.605.474.81
+*
+*/
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,8 +40,13 @@
 // Global Variables
 static int listen_fd;
 
+/*
+* Function that sets up the subscriber and returns
+* a socket.
+*/
 int setup_subscriber(char *host, char *port)
 {
+	// Variables
 	int i, result, fd, status, val = 1;
 	struct addrinfo hints, *res, *ptr;
 	struct sockaddr addr_cpy;
@@ -26,34 +54,38 @@ int setup_subscriber(char *host, char *port)
 	char gethost[BUFFER_SIZE];
 	char getserv[BUFFER_SIZE];
 
-	memset(&hints, 0, sizeof (hints));
+	printf ("Calling setup_subscriber %s %s\n", host, port);
 
+  // Zero out the hints and set the hints.
+	memset(&hints, 0, sizeof (hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
+	//Obtain the list of addresses.
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-	ptr = res;
+	//ptr = res;
 	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	//{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
-	       || ptr->ai_family == AF_UNIX)
-		{
-			found = TRUE;
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+	//	if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
+	//       || ptr->ai_family == AF_UNIX)
+	//	{
+	//		found = TRUE;
+	// Create a socket with the information from getaddrinfo.
+			fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 			//break;
-		}
+	//	}
 	//}
 
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
-	}
+	//if (found == FALSE)
+	//{
+		//printf("Unable to find anything in getaddrinfo\n");
+		//return NITS_SOCKET_ERROR;
+	//}
 
 	if (fd == -1)
 	{
@@ -61,29 +93,32 @@ int setup_subscriber(char *host, char *port)
 		return NITS_SOCKET_ERROR;
 	}
 
-	if (fd == NITS_SOCKET_ERROR)
-		return NITS_SOCKET_ERROR;
+	//if (fd == NITS_SOCKET_ERROR)
+		//return NITS_SOCKET_ERROR;
 
+		// Loop 6 times until a connection can be established. There
+		// will be a 1 second delay after a failure is determined.
 	for (i = 0; i < 6; i++)
 	{
-		result = connect(fd, ptr->ai_addr, ptr->ai_addrlen);
-		printf("result: %d\n", result);
-			if (result == 0)
-				break;
-			else
-			{
-				perror("connect error.");
-				sleep(1);
-			}
+		result = connect(fd, res->ai_addr, res->ai_addrlen);
+
+		if (result == 0)
+			break;
+		else
+		{
+			perror("connect error.");
+			sleep(1);
+		}
 	}
 
 	// If the counter is set to 6 return an error.
 	if (i == 6)
 		return NITS_SOCKET_ERROR;
 
-	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	// Obtain the host and port and print it out.
+	getnameinfo(res->ai_addr, res->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Subscriber created on %s %s\n", gethost, getserv);
 
-	printf ("Calling setup_subscriber %s %s\n", gethost, getserv);
 	freeaddrinfo(res);
 	return fd;
 }
@@ -97,13 +132,15 @@ int setup_publisher(char *host, char *port)
 	char gethost[BUFFER_SIZE];
 	char getserv[BUFFER_SIZE];
 
-	memset(&hints, 0, sizeof (hints));
+  printf ("Calling setup_publisher %s %s\n", host, port);
 
+ // Zero out the hints and set the hints.
+	memset(&hints, 0, sizeof (hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	printf("%s, %s ", host, port);
+	// Obtain the list of addresses
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
@@ -111,50 +148,56 @@ int setup_publisher(char *host, char *port)
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-	ptr = res;
+
+	//ptr = res;
 	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	//{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
-	       || ptr->ai_family == AF_UNIX)
-		{
-			found = TRUE;
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+		//if ((res->ai_family == AF_INET) || res->ai_family == AF_INET6
+	   //    || res->ai_family == AF_UNIX)
+		//{
+		//	found = TRUE;
+		// Create a socket with the information from getaddrinfo.
+			fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 			if (fd == -1)
 			{
-				perror("socket error\n");
+				perror("socket error");
 				return NITS_SOCKET_ERROR;
 			}
 
+			// Enable SO_REUSEADDR.
 			if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0){
 				perror("setsockopt error");
 				return NITS_SOCKET_ERROR;
 			}
 
-			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			// Bind to the socket.
+			if (bind(fd, res->ai_addr, res->ai_addrlen) < 0)
 			{
 				close(fd);
 				perror("bind error");
 				return NITS_SOCKET_ERROR;
 			}
 			//break;
-		}
+		//}
 	//}
 
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
-	}
+	//if (found == FALSE)
+	//{
+	//	printf("Unable to find anything in getaddrinfo\n");
+	//	return NITS_SOCKET_ERROR;
+	//}
 
+	// Listen on the socket.
 	if (listen(fd, 5) < 0)
 	{
 		perror("listen error\n\n");
 		return NITS_SOCKET_ERROR;
 	}
 
-	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
-	printf ("Calling setup_publisher %s %s\n", gethost, getserv);
+// Obtain the host and port and print it out.
+	getnameinfo(res->ai_addr, res->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Publisher created on %s %s\n", gethost, getserv);
 
 	freeaddrinfo(res);
 	listen_fd = fd;
@@ -166,6 +209,7 @@ int get_next_subscriber (void)
 	int accept_fd;
 
 	printf ("Calling get_next_subscriber\n");
+
 	// Return the error if the socket has not been created
 	if (!(listen_fd > 0))
 	{
@@ -183,6 +227,7 @@ int get_next_subscriber (void)
 		return NITS_SOCKET_ERROR;
 	}
 
+	// Return the file descriptor.
 	return accept_fd;
 }
 
@@ -195,12 +240,15 @@ int setup_discovery (char *host, char *port)
 	char gethost[BUFFER_SIZE];
 	char getserv[BUFFER_SIZE];
 
-	memset(&hints, 0, sizeof (hints));
+	printf ("Calling setup_discovery %s %s\n", host, port);
 
+  // Zero out the hints and set the hints.
+	memset(&hints, 0, sizeof (hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE;
 
+	// Obtain the list of addresses.
 	if ((status = getaddrinfo(host, port, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
@@ -212,12 +260,12 @@ int setup_discovery (char *host, char *port)
 	ptr = res;
 	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	//{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
-	       || ptr->ai_family == AF_UNIX)
-		{
-			found = TRUE;
+	//	if ((res->ai_family == AF_INET) || res->ai_family == AF_INET6
+	//       || res->ai_family == AF_UNIX)
+	//	{
+		//	found = TRUE;
 
-			fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+			fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 			if (fd == -1)
 			{
@@ -230,24 +278,24 @@ int setup_discovery (char *host, char *port)
 				return NITS_SOCKET_ERROR;
 			}
 
-			if (bind(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+			if (bind(fd, res->ai_addr, res->ai_addrlen) < 0)
 			{
 				close(fd);
 				perror("bind error");
 				return NITS_SOCKET_ERROR;
 			}
 			//break;
-		}
+		//}
 	//}
 
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
-	}
+//	if (found == FALSE)
+	//{
+		//printf("Unable to find anything in getaddrinfo\n");
+//		return NITS_SOCKET_ERROR;
+//	}
 
-	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
-	printf ("Calling setup_discovery %s %s\n", gethost, getserv);
+	getnameinfo(res->ai_addr, res->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Discovery service created on %s %s\n", gethost, getserv);
 	return fd;
 }
 
@@ -257,6 +305,7 @@ int setup_discovery (char *host, char *port)
  */
 int register_publisher (char *host, char *port, char *dhost, char *dport)
 {
+	// Variables
 	int i, result, bytes, status;
 	disc_advertise mesg;
 	char pub_addr[ADDRESS_LENGTH];
@@ -267,31 +316,34 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 	char gethost[BUFFER_SIZE];
 	char getserv[BUFFER_SIZE];
 
-	memset(&hints, 0, sizeof (hints));
+	printf ("Calling register_publisher %s %s %s %s\n", host, port, dhost, dport);
 
+	// Zero out the hints and set the hints.
+	memset(&hints, 0, sizeof (hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
-
-
+	// Obtain the list of addresses.
 	if ((status = getaddrinfo(dhost, dport, &hints, &res)) != 0)
 	{
 		perror("getaddrinfo error");
 		printf("%s\n", gai_strerror(status));
 		return NITS_SOCKET_ERROR;
 	}
-	ptr=res;
+	//res=res;
 	//for (ptr = res; ptr != NULL; ptr = ptr->ai_next)
 	//{
-		if ((ptr->ai_family == AF_INET) || ptr->ai_family == AF_INET6
-		     || ptr->ai_family == AF_UNIX)
-		{
-			found = TRUE;
-
-			if (ptr->ai_family == AF_UNIX)
+	//	if ((res->ai_family == AF_INET) || res->ai_family == AF_INET6
+		//     || res->ai_family == AF_UNIX)
+		//{
+	//		found = TRUE;
+	// If the address is AF_LOCAL/UNIX then call setup discovery.
+	// This will create the end point that is needed in order
+	// to communicate properly. Otherwise just create a socket.
+			if (res->ai_family == AF_UNIX)
 					fd = setup_discovery(dhost, NULL);
 			else
-					fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+					fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 			if (fd == NITS_SOCKET_ERROR)
 			{
@@ -304,32 +356,34 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 			//	return NITS_SOCKET_ERROR;
 		//}
 
-			//if (ptr->ai_family == AF_UNIX)
+			//if (res->ai_family == AF_UNIX)
 				//unlink(dport);
 
-			if (connect(fd, ptr->ai_addr, ptr->ai_addrlen) < 0)
+				// Establish a connection.
+			if (connect(fd, res->ai_addr, res->ai_addrlen) < 0)
 			{
 				perror("connect error");
 				return NITS_SOCKET_ERROR;
 			}
 			//break;
-		}
+	//	}
 	//}
 
-	if (found == FALSE)
-	{
-		printf("Unable to find anything in getaddrinfo\n");
-		return NITS_SOCKET_ERROR;
-	}
-
+	//if (found == FALSE)
+	//{
+	//	printf("Unable to find anything in getaddrinfo\n");
+	//	return NITS_SOCKET_ERROR;
+	//}
 	// Create the advertise message.
 	strcpy(pub_addr, host);
 	strcat(pub_addr, ":");
 	strcat(pub_addr, port);
-
 	mesg.msg_type = 'A';
+
+	// Copy the address to the buffer.
 	memcpy(&mesg.pub_address, &pub_addr, ADDRESS_LENGTH);
 
+	// Send the message.
 	bytes = write(fd, &mesg, sizeof(mesg));
 
 	if (bytes < 0) {
@@ -337,9 +391,9 @@ int register_publisher (char *host, char *port, char *dhost, char *dport)
 		return NITS_SOCKET_ERROR;
 	}
 
-	getnameinfo(ptr->ai_addr, ptr->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
-
-	printf ("Calling register_publisher %s %s %s %s\n", host, port, gethost, getserv);
+	getnameinfo(res->ai_addr, res->ai_addrlen, gethost, sizeof gethost, getserv, sizeof getserv, NI_NUMERICSERV);
+	printf ("Sent the following: %s %s\nTo the discovery service:%s %s\n", host, port, gethost, getserv);
+	freeaddrinfo(res);
 	return (NITS_SOCKET_OK);
 }
 
