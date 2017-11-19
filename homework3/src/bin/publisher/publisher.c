@@ -1,5 +1,15 @@
 /*
- *	<Header stuff goes here>
+ *Project: Assignment 3
+ *
+ *Progam: publisher
+ *File Name: publisher.c
+ *Purpose: Serves articles requested by the subscriber.
+ *         This handles multiple clients, and interacts
+ *         with the discovery service.
+ *
+ *Programmer: Edwin Flores
+ *Course: EN.605.474.81
+ *
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,10 +18,10 @@
 #include <unistd.h>
 #include <string.h>
 #include "nitslib.h"
+
 #define MAXLEN 1024
 #define SUB_BUFLEN 80
 #define ART_BUFLEN 1024
-
 #define BUFFER_SIZE 1024
 #define DEFAULT_PORT	"localhost:8404"
 
@@ -118,18 +128,19 @@ void child_process(int fd)
 	}
 }
 
+/**
+*	The main program.
+*/
 int main(int argc, char *argv[])
 {
-	int c;
-	//char publisher[MAXLEN];
-	//char discovery[MAXLEN];
+	// Variables.
+	int c, fd;
 	char *phost, *pport;
 	char *dhost, *dport;
-	int fd;
-
 	char *publisher = NULL;
 	char *discovery = NULL;
 
+	// Check and parse if there are and command line options.
 	while ((c = getopt(argc, argv, "hd:")) != -1)
 	{
 		switch (c)
@@ -144,31 +155,36 @@ int main(int argc, char *argv[])
 				exit (1);
 		}
 	}
+
+	// Set the discovery information if nothing was entered.
 	if (discovery == NULL)
 	{
 		discovery = malloc(MAXLEN);
 		strcpy (discovery, DEFAULT_PORT);
 	}
 
+	// Set the publisher information if nothing was entered.
 	if (publisher == NULL)
 	{
 		publisher = malloc(MAXLEN);
 		strcpy (publisher, DEFAULT_PORT);
 	}
 
+	// Parse the publisher and discovery information.
 	get_host_and_port (discovery, &dhost, &dport);
 	get_host_and_port (publisher, &phost, &pport);
 
-	printf("P: %s, %s D: %s, %s\n", phost, pport, dhost, dport);
-
+	// Send this publishers information to the discovery service.
 	register_publisher(phost, pport, dhost, dport);
 
+	// Setup the publisher.
 	if ((setup_publisher (phost, pport)) == NITS_SOCKET_ERROR)
 	{
 		fprintf (stderr, "Cannot set up publisher.\n");
 		exit(1);
 	}
 
+	// Wait for the subscriber.
 	fd = get_next_subscriber();
 
 	if (fd == NITS_SOCKET_ERROR)
