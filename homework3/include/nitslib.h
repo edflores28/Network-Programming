@@ -76,8 +76,6 @@ typedef union {
 	disc_advertise putpub;
 } discovery_msgs;
 
-enum BOOL {TRUE, FALSE};
-
 int get_next_subscriber(void);
 int setup_subscriber (char *host, char *port);
 int setup_publisher (char *host, char *port);
