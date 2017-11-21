@@ -21,10 +21,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include "nitslib.h"
+#include "config.h"
 
 #define MAXLEN	256
-#define DEFAULT_PORT	"localhost:8404"
-
 #define BUFFER_SIZE 1024
 
 /**
@@ -176,7 +175,7 @@ int main(int argc, char *argv[])
 	if (discovery == NULL)
 	{
 		discovery = malloc(MAXLEN);
-		strcpy (discovery, DEFAULT_PORT);
+		strcpy (discovery, DEFAULT_DISCOVERY);
 	}
 
 	get_host_and_port (discovery, &host, &port);

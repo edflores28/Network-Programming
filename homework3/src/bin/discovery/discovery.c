@@ -20,12 +20,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "nitslib.h"
+#include "config.h"
 
-//#include <arpa/inet.h>
-//#include <netinet/in.h>
-//#include <sys/un.h>
 #define MAXLEN (128)
-#define DEFAULT_DISCOVERY "localhost:8404"
 #define BUFFER_SIZE 1024
 
 /**

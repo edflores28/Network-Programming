@@ -19,12 +19,12 @@
 #include <string.h>
 #include <signal.h>
 #include "nitslib.h"
+#include "config.h"
 
 #define MAXLEN 1024
 #define SUB_BUFLEN 80
 #define ART_BUFLEN 1024
 #define BUFFER_SIZE 1024
-#define DEFAULT_PORT	"localhost:8404"
 
 // Path's to look for the articles
 char myArticle[] = "/home/eflores4/Articles/";
@@ -163,14 +163,14 @@ int main(int argc, char *argv[])
 	if (discovery == NULL)
 	{
 		discovery = malloc(MAXLEN);
-		strcpy (discovery, DEFAULT_PORT);
+		strcpy (discovery, DEFAULT_DISCOVERY);
 	}
 
 	// Set the publisher information if nothing was entered.
 	if (publisher == NULL)
 	{
 		publisher = malloc(MAXLEN);
-		strcpy (publisher, DEFAULT_PORT);
+		strcpy (publisher, DEFAULT_PUBLISHER);
 	}
 
 	// Parse the publisher and discovery information.
