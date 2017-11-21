@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 	printf("\nObtaining the list of articles from the publisher...\n\n");
 	bytes = write(fd,"LIST",4);
 
-	if (bytes < 0)
+	if (bytes <= 0)
 	{
 		perror("Error writing\n");
 		close(fd);
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 	// only send the buffer size of data.
 	bytes = read(fd,buffer,BUFFER_SIZE);
 
-	if (bytes < 0)
+	if (bytes <= 0)
 	{
 		perror("Error reading\n");
 		close(fd);
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Requesting %s\n",article);
-	bytes = write(fd, article, length);
+	bytes = write(fd, &article, length);
 
 	if (bytes < 0)
 	{
@@ -332,11 +332,13 @@ int main(int argc, char *argv[])
 		printf("There was nothing recieved from the publisher\n");
 
 	printf("Enter QUIT\n");
-	printf("This will interrupt other clients as well: ");
+	printf("This will kill the publisher program: ");
+	printf("Otherwise hit Enter anything: ");
 	scanf("%s",article);
 
-	// Send QUIT to kill the publisher.
-	bytes = write(fd, "QUIT", 4);
+	if ((strcmp(article, "QUIT") == 0))
+		// Send QUIT to kill the publisher.
+		bytes = write(fd, "QUIT", 4);
 
 	// Do some cleanup.
 	close(fd);
