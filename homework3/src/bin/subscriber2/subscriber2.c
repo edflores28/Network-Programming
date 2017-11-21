@@ -45,7 +45,6 @@ disc_pub_list request_list(char *host, char *port)
 	struct addrinfo hints, *res, *ptr;
 	struct sockaddr addr_cpy;
 	int fd = -1, val = 1;
-	enum BOOL found = FALSE;
 
 	// Zero out the hints and set the hints.
 	memset(&hints, 0, sizeof (hints));
