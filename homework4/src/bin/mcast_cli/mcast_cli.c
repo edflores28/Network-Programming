@@ -24,7 +24,7 @@
 #include "config.h"
 
 #define BUFFER_SIZE 1024
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 15
 
 // Struct that contains the information of the client.
 struct info {
@@ -40,22 +40,19 @@ struct info list[MAX_CLIENTS];
   The method creates a socket, binds the socket, and joins
   a the multicast group for MAX_CLIENTS.
 */
-int setup_clients(char *port)
+int setup_clients()
 {
   int i, result, val = 1;
   struct sockaddr_in c_addr;
   struct ip_mreq multi;
   int total_setup = 0;
-
-  printf("Creating %d clients on port %s\n", MAX_CLIENTS, port);
-  printf("Joining multicast group %s\n\n", MULTICAST_GROUP);
+  int port = 8000;
 
   // Zero out.
   memset(&c_addr, 0, sizeof(c_addr));
 
-  // Set the family and the port number.
+  // Set the family and the address.
   c_addr.sin_family = AF_INET;
-  c_addr.sin_port = htons(atoi(port));
   c_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   // Define the multicast group.
@@ -68,9 +65,15 @@ int setup_clients(char *port)
     // Clear out client so it can be used.
     memset(&list[i].client, 0, sizeof(list[i].client));
 
+    // Set the port for the socket.
+    c_addr.sin_port = htons(port);
+
     // Set the options.
     list[i].client = c_addr;
     list[i].addrlen = sizeof(list[i].client);
+
+    // Increment the port;
+    port++;
 
     // Obtain a file descriptor for the client. goto the end of
     // the loop is an error is encountered.
@@ -105,6 +108,9 @@ int setup_clients(char *port)
     // Increment the counter.
     total_setup++;
 
+    printf("Created a client on port %d\n", port);
+    printf("Joined multicast group %s\n\n", MULTICAST_GROUP);
+
     end : NULL;
   }
 
@@ -117,35 +123,17 @@ int setup_clients(char *port)
 int main (int argc, char *argv[])
 {
   // Variables.
-  int fd, total, val = 1;
+  int fd, total_cli, val = 1;
   int i, c, result, max_fd = 0;
   int nbytes, addrlen;
   char buffer[BUFFER_SIZE];
-  char *port = NULL;
   fd_set readfds;
 
-  // Check and parse if there are and command line options.
-	while ((c = getopt(argc, argv, "p:")) != -1)
-	{
-		switch (c)
-		{
-				case 'p':
-				      port = optarg;
-				      break;
-				default:
-				      fprintf (stderr, "Usage: %s -p <port>\n", argv[0]);
-				      exit (1);
-		}
-	}
-
-  if (port == NULL)
-    port = DEFAULT_PORT;
-
   // Setup all the clients.
-  total = setup_clients(port);
+  total_cli = setup_clients();
 
   // Exit if there are no available clients.
-  if (total == 0)
+  if (total_cli == 0)
   {
     printf("There are no clients setup!\n");
     return 1;
@@ -177,7 +165,7 @@ int main (int argc, char *argv[])
     if (FD_ISSET(STDIN_FILENO, &readfds))
     {
       printf("Activity on STDIN, exiting..\n");
-      
+
       for (i = 0; i < MAX_CLIENTS; i++)
         if (list[i].fd > 0)
           close(list[i].fd);
