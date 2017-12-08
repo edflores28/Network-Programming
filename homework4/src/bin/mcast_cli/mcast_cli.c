@@ -25,6 +25,7 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 15
+#define INITIAL_PORT 8404
 
 // Struct that contains the information of the client.
 struct info {
@@ -46,7 +47,7 @@ int setup_clients()
   struct sockaddr_in c_addr;
   struct ip_mreq multi;
   int total_setup = 0;
-  int port = 8000;
+  int port = INITIAL_PORT;
 
   // Zero out.
   memset(&c_addr, 0, sizeof(c_addr));
