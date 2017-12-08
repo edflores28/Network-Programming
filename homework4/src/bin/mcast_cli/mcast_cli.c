@@ -73,6 +73,9 @@ int setup_clients()
     list[i].client = c_addr;
     list[i].addrlen = sizeof(list[i].client);
 
+    printf("Creating a client on port %d\n", port-1);
+    printf("Joining multicast group %s\n\n", MULTICAST_GROUP);
+
     // Increment the port;
     port++;
 
@@ -108,9 +111,6 @@ int setup_clients()
 
     // Increment the counter.
     total_setup++;
-
-    printf("Created a client on port %d\n", port);
-    printf("Joined multicast group %s\n\n", MULTICAST_GROUP);
 
     end : NULL;
   }
