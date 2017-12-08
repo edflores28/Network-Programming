@@ -25,7 +25,7 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 15
-#define INITIAL_PORT 8404
+#define INITIAL_PORT 8400
 
 // Struct that contains the information of the client.
 struct info {
